@@ -16,7 +16,16 @@ export const ToastProvider = ({ children }) => {
 
   const showToast = useCallback((message, type = 'info', duration = 3000) => {
     const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type, duration }]);
+    
+    // Safety check for duration
+    let finalDuration = 3000;
+    if (typeof duration === 'number') {
+      finalDuration = duration;
+    } else if (duration && typeof duration === 'object' && typeof duration.duration === 'number') {
+      finalDuration = duration.duration;
+    }
+
+    setToasts(prev => [...prev, { id, message, type, duration: finalDuration }]);
   }, []);
 
   const success = useCallback((message, duration) => {

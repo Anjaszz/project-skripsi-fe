@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { inventoryAPI, kasirAPI } from '../services/api';
-import { FaPlus, FaTrash, FaShoppingCart, FaReceipt, FaPrint, FaSearch } from 'react-icons/fa';
+import { menuAPI, kasirAPI } from '../services/api';
+import { FaPlus, FaMinus, FaTrash, FaShoppingCart, FaReceipt, FaPrint, FaSearch, FaTimes, FaImage } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 import { jsPDF } from 'jspdf';
 
@@ -13,61 +13,81 @@ const Kasir = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const toast = useToast();
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const BASE_URL = API_URL.replace('/api', '');
+
   useEffect(() => {
     fetchProducts();
   }, []);
 
   const fetchProducts = async () => {
     try {
-      const response = await inventoryAPI.getForKasir();
-      setProducts(response.data.data);
+      const response = await menuAPI.getAll({ isActive: true });
+      // Only items with linked inventory and stock > 0
+      const activeProducts = response.data.data.filter(item => item.inventory && item.inventory.stock > 0);
+      setProducts(activeProducts);
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Gagal mengambil data produk');
+      toast.error('Gagal mengambil data produk menu');
     } finally {
       setLoading(false);
     }
   };
 
+  const getPrice = (item, qty) => {
+    if (!item.wholesalePrices || item.wholesalePrices.length === 0) return item.price;
+    const sortedRules = [...item.wholesalePrices].sort((a, b) => b.minQty - a.minQty);
+    const rule = sortedRules.find(r => qty >= r.minQty);
+    return rule ? rule.price : item.price;
+  };
+
   const addToCart = (product) => {
     const existing = cart.find(item => item.product._id === product._id);
     if (existing) {
-      updateCart(existing.product._id, existing.quantity + 1, existing.sellingPrice);
+      const newQty = (existing.quantity || 0) + 1;
+      const newPrice = getPrice(product, newQty);
+      updateCart(existing.product._id, newQty, newPrice);
     } else {
+      const price = getPrice(product, 1);
       setCart([...cart, {
         product,
         quantity: 1,
-        sellingPrice: Math.ceil(product.purchasePrice * 1.3) // Default margin 30%
+        sellingPrice: price
       }]);
     }
   };
 
   const updateCart = (productId, quantity, sellingPrice) => {
-    // Parse values, handle empty string
     const parsedQty = quantity === '' ? '' : parseInt(quantity);
     const parsedPrice = sellingPrice === '' ? '' : parseInt(sellingPrice);
 
-    // Validate quantity if not empty
     if (parsedQty !== '' && parsedQty <= 0) {
       toast.warning('Jumlah harus lebih dari 0');
       return;
     }
 
-    const product = products.find(p => p._id === productId);
-    if (parsedQty !== '' && parsedQty > product.stock) {
-      toast.warning(`Stok ${product.name} tidak cukup! Tersedia: ${product.stock}`);
+    const itemObj = products.find(p => p._id === productId);
+    if (!itemObj) return;
+
+    const stockAvailable = itemObj.inventory?.stock || 0;
+
+    if (parsedQty !== '' && parsedQty > stockAvailable) {
+      toast.warning(`Stok ${itemObj.name} tidak cukup! Tersedia: ${stockAvailable}`);
       return;
     }
 
-    // Validate selling price if not empty
-    if (parsedPrice !== '' && parsedPrice < 0) {
-      toast.warning('Harga jual tidak boleh negatif');
-      return;
+    // Auto-calculate wholesale price if quantity changed but price was at previous default/wholesale
+    let finalPrice = parsedPrice;
+    const currentItem = cart.find(item => item.product._id === productId);
+    if (currentItem && quantity !== currentItem.quantity) {
+      // If the cashier hasn't manually overridden with a random price 
+      // (or if we just want to re-apply rules whenever qty changes)
+      finalPrice = getPrice(itemObj, parsedQty || 1);
     }
 
     setCart(cart.map(item =>
       item.product._id === productId
-        ? { ...item, quantity: parsedQty, sellingPrice: parsedPrice }
+        ? { ...item, quantity: parsedQty, sellingPrice: finalPrice }
         : item
     ));
   };
@@ -84,26 +104,17 @@ const Kasir = () => {
     }, 0);
   };
 
-  // Check if cart is valid for checkout
   const isCartValid = () => {
     if (cart.length === 0) return false;
-
-    return cart.every(item => {
-      // Check if quantity and sellingPrice are valid numbers
-      const hasValidQty = typeof item.quantity === 'number' && item.quantity > 0;
-      const hasValidPrice = typeof item.sellingPrice === 'number' && item.sellingPrice >= 0;
-      return hasValidQty && hasValidPrice;
-    });
+    return cart.every(item => item.quantity > 0 && item.sellingPrice >= 0);
   };
 
   const handleCheckout = async () => {
-    if (cart.length === 0) {
-      toast.warning('Keranjang masih kosong!');
-      return;
-    }
+    if (cart.length === 0) return;
 
+    // The backend expects productId from Inventory model
     const items = cart.map(item => ({
-      productId: item.product._id,
+      productId: item.product.inventory._id,
       quantity: item.quantity,
       sellingPrice: item.sellingPrice
     }));
@@ -113,12 +124,21 @@ const Kasir = () => {
       setLastTransaction(response.data.data);
       setShowReceipt(true);
       setCart([]);
-      fetchProducts(); // Refresh product stock
-      toast.success('Transaksi berhasil disimpan!');
+      fetchProducts();
+      toast.success('Transaksi berhasil!');
     } catch (error) {
       console.error('Error:', error);
-      toast.error(error.response?.data?.message || 'Gagal menyimpan transaksi');
+      toast.error('Gagal menyimpan transaksi');
     }
+  };
+
+  const formatInputNumber = (val) => {
+    if (val === undefined || val === null || val === '') return '';
+    return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  const parseInputNumber = (val) => {
+    return val.replace(/\./g, '').replace(/\D/g, '');
   };
 
   const formatCurrency = (amount) => {
@@ -129,324 +149,170 @@ const Kasir = () => {
     }).format(amount);
   };
 
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  // Filter products based on search term
   const filteredProducts = products.filter(product => {
-    if (!searchTerm) return true;
-
     const searchLower = searchTerm.toLowerCase();
-    const matchName = product.name.toLowerCase().includes(searchLower);
-    const matchVariant = product.variantName && product.variantName.toLowerCase().includes(searchLower);
-
-    return matchName || matchVariant;
+    return product.name.toLowerCase().includes(searchLower);
   });
 
   const handlePrintInvoice = () => {
     if (!lastTransaction) return;
-
     const doc = new jsPDF();
-
-    // Header
-    doc.setFontSize(20);
-    doc.text('INVOICE PENJUALAN', 105, 20, { align: 'center' });
-
-    doc.setFontSize(10);
-    doc.text('Inventory & Kasir System', 105, 28, { align: 'center' });
-
-    // Line separator
-    doc.setLineWidth(0.5);
-    doc.line(20, 32, 190, 32);
-
-    // Transaction Info
-    doc.setFontSize(11);
-    doc.text(`No. Transaksi: ${lastTransaction.transactionNumber}`, 20, 40);
-    doc.text(`Tanggal: ${formatDate(lastTransaction.createdAt)}`, 20, 47);
-    doc.text(`Kasir: ${lastTransaction.cashierName}`, 20, 54);
-
-    // Line separator
-    doc.setLineWidth(0.2);
-    doc.line(20, 58, 190, 58);
-
-    // Table Header
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'bold');
-    doc.text('Item', 20, 65);
-    doc.text('Qty', 120, 65, { align: 'right' });
-    doc.text('Harga', 150, 65, { align: 'right' });
-    doc.text('Subtotal', 185, 65, { align: 'right' });
-
-    doc.line(20, 67, 190, 67);
-
-    // Table Content
-    doc.setFont(undefined, 'normal');
-    let yPos = 75;
-
-    lastTransaction.items.forEach((item, index) => {
-      if (yPos > 270) {
-        doc.addPage();
-        yPos = 20;
-      }
-
-      // Product name with variant
-      const productText = item.variantName
-        ? `${item.productName} (${item.variantName})`
-        : item.productName;
-
-      doc.text(productText, 20, yPos);
-      doc.text(item.quantity.toString(), 120, yPos, { align: 'right' });
-      doc.text(formatCurrency(item.sellingPrice), 150, yPos, { align: 'right' });
-      doc.text(formatCurrency(item.subtotal), 185, yPos, { align: 'right' });
-
-      yPos += 7;
-    });
-
-    // Line before total
-    doc.setLineWidth(0.5);
-    doc.line(20, yPos, 190, yPos);
-    yPos += 8;
-
-    // Total
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text('TOTAL:', 120, yPos);
-    doc.text(formatCurrency(lastTransaction.total), 185, yPos, { align: 'right' });
-
-    // Footer
-    yPos += 15;
-    doc.setFontSize(9);
-    doc.setFont(undefined, 'normal');
-    doc.text('Terima kasih atas pembelian Anda!', 105, yPos, { align: 'center' });
-
-    // Save or Print
+    doc.text('INVOICE', 105, 20, { align: 'center' });
+    doc.text(`No: ${lastTransaction.transactionNumber}`, 20, 40);
+    doc.text(`Total: ${formatCurrency(lastTransaction.total)}`, 20, 60);
     doc.autoPrint();
     window.open(doc.output('bloburl'), '_blank');
   };
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-full"><div className="spinner"></div></div>;
-  }
+  if (loading) return <div className="flex justify-center py-20"><div className="spinner"></div></div>;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Kasir</h1>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <FaShoppingCart className="text-blue-600" />
-          <span>Total Produk: <strong>{products.length}</strong></span>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">Kasir (Menu Jual)</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Product List */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Daftar Produk</h2>
-              <span className="text-sm text-gray-600">
-                {searchTerm && `Ditemukan ${filteredProducts.length} produk`}
-              </span>
-            </div>
+        {/* Products */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white p-4 rounded-lg shadow-sm border relative">
+            <FaSearch className="absolute left-7 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cari menu produk..."
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-            {/* Search Input */}
-            <div className="mb-4">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Cari produk berdasarkan nama atau variant..."
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto">
-              {filteredProducts.length === 0 ? (
-                <div className="col-span-2 text-center py-12">
-                  <FaSearch className="text-6xl text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">
-                    {searchTerm ? `Tidak ada produk yang cocok dengan "${searchTerm}"` : 'Belum ada produk tersedia'}
-                  </p>
-                </div>
-              ) : (
-                filteredProducts.map(product => (
-                <div key={product._id} className="border rounded-lg p-4 hover:shadow-md transition">
-                  <h3 className="font-bold text-lg mb-1">{product.name}</h3>
-                  <p className="text-sm text-gray-600 mb-2">{product.variantName || '-'}</p>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm">Stok: <strong>{product.stock}</strong></span>
-                    <span className="text-sm text-gray-600">{formatCurrency(product.purchasePrice)}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProducts.map(product => (
+              <div key={product._id} className="bg-white rounded-lg shadow-sm border overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow">
+                <div className="relative h-32 bg-gray-100 overflow-hidden">
+                  {product.image ? (
+                    <img
+                      src={`${BASE_URL}/${product.image}`}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                      <FaImage size={24} />
+                    </div>
+                  )}
+                  <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white px-2 py-1 text-[10px] font-bold backdrop-blur-sm">
+                    Stock: {product.inventory?.stock || 0}
                   </div>
+                </div>
+                
+                <div className="p-4 flex-grow">
+                  <h3 className="font-bold text-gray-800 text-sm mb-1 line-clamp-1">{product.name}</h3>
+                  <p className="text-blue-600 font-black text-sm">{formatCurrency(product.price)}</p>
+                  {product.variants && product.variants.length > 0 && (
+                     <p className="text-[10px] text-gray-400 mt-1 truncate">{product.variants.join(', ')}</p>
+                  )}
+                </div>
+
+                <div className="p-4 pt-0">
                   <button
                     onClick={() => addToCart(product)}
-                    disabled={product.stock === 0}
-                    className="w-full bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    className="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors"
                   >
-                    <FaPlus />
-                    <span>Tambah ke Keranjang</span>
+                    Pilih Menu
                   </button>
                 </div>
-              ))
-              )}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Cart */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <FaShoppingCart className="text-2xl text-blue-600" />
-              <h2 className="text-xl font-bold">Keranjang</h2>
+        <div className="bg-white rounded-lg shadow-md border overflow-hidden flex flex-col h-fit sticky top-6">
+            <div className="p-4 bg-gray-50 border-b flex items-center gap-2">
+                <FaShoppingCart className="text-blue-600" />
+                <h2 className="font-bold text-gray-800">Keranjang</h2>
             </div>
-
-            <div className="max-h-[400px] overflow-y-auto mb-4">
-              {cart.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">Keranjang kosong</p>
-              ) : (
-                cart.map((item) => (
-                  <div key={item.product._id} className="border-b py-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-medium flex-1">{item.product.name} ( <span className="text-sm text-gray-600 mb-2">{item.product.variantName || '-'}</span> )</h4>
-                      
-                      <button
-                        onClick={() => removeFromCart(item.product._id)}
-                        className="text-red-600 hover:text-red-800 ml-2"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Qty</label>
-                        <input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => updateCart(item.product._id, e.target.value, item.sellingPrice)}
-                          min="1"
-                          max={item.product.stock}
-                          className={`w-full border rounded px-2 py-1 focus:outline-none focus:ring-2 ${
-                            item.quantity === '' || item.quantity <= 0 || item.quantity > item.product.stock
-                              ? 'border-red-500 focus:ring-red-500 bg-red-50'
-                              : 'border-gray-300 focus:ring-blue-500'
-                          }`}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Harga Jual</label>
-                        <input
-                          type="number"
-                          value={item.sellingPrice}
-                          onChange={(e) => updateCart(item.product._id, item.quantity, e.target.value)}
-                          min="0"
-                          className={`w-full border rounded px-2 py-1 focus:outline-none focus:ring-2 ${
-                            item.sellingPrice === '' || item.sellingPrice < 0
-                              ? 'border-red-500 focus:ring-red-500 bg-red-50'
-                              : 'border-gray-300 focus:ring-blue-500'
-                          }`}
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-2 text-right">
-                      {typeof item.quantity === 'number' && typeof item.sellingPrice === 'number' ? (
-                        <span className="font-semibold text-gray-900">
-                          {formatCurrency(item.quantity * item.sellingPrice)}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-red-600 italic">
-                          Input tidak valid
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="p-4 max-h-[400px] overflow-y-auto space-y-4">
+                {cart.length === 0 ? (
+                    <p className="text-center text-gray-400 py-8">Keranjang kosong</p>
+                ) : (
+                    cart.map(item => (
+                        <div key={item.product._id} className="flex justify-between items-center text-sm border-b pb-4 last:border-0 last:pb-0">
+                            <div className="flex-1 pr-4">
+                                <p className="font-bold text-gray-800 leading-tight">{item.product.name}</p>
+                                <div className="flex flex-col gap-2 mt-2">
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => updateCart(item.product._id, Math.max(1, (Number(item.quantity) || 1) - 1), item.sellingPrice)} className="text-gray-400 hover:text-blue-500"><FaMinus size={10} /></button>
+                                        <input 
+                                            type="number" 
+                                            value={item.quantity} 
+                                            onChange={(e) => updateCart(item.product._id, e.target.value, item.sellingPrice)}
+                                            className="font-bold w-12 text-center border rounded py-0.5 text-xs"
+                                        />
+                                        <button onClick={() => updateCart(item.product._id, (Number(item.quantity) || 0) + 1, item.sellingPrice)} className="text-gray-400 hover:text-blue-500"><FaPlus size={10} /></button>
+                                    </div>
+                                    <div className="relative">
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold">Rp</span>
+                                        <input 
+                                            type="text" 
+                                            value={formatInputNumber(item.sellingPrice)}
+                                            onChange={(e) => updateCart(item.product._id, item.quantity, parseInputNumber(e.target.value))}
+                                            className="w-full pl-7 pr-2 py-1 border rounded text-xs font-bold text-blue-600 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="text-right flex flex-col justify-between h-full min-h-[60px]">
+                                <button onClick={() => removeFromCart(item.product._id)} className="text-red-400 hover:text-red-600 self-end"><FaTrash size={12} /></button>
+                                <div>
+                                    <p className="text-[9px] text-gray-400 uppercase font-bold">Subtotal</p>
+                                    <p className="font-black text-gray-800">{formatCurrency((Number(item.quantity) || 0) * (Number(item.sellingPrice) || 0))}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
-
-            <div className="border-t pt-4">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-lg font-bold">TOTAL</span>
-                <span className="text-2xl font-bold text-blue-600">{formatCurrency(getTotal())}</span>
-              </div>
-              <button
-                onClick={handleCheckout}
-                disabled={!isCartValid()}
-                className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 font-semibold transition-colors"
-              >
-                <FaShoppingCart />
-                <span>Checkout</span>
-              </button>
-              {cart.length > 0 && !isCartValid() && (
-                <p className="text-xs text-red-600 mt-2 text-center">
-                  Pastikan semua item memiliki qty dan harga yang valid
-                </p>
-              )}
+            <div className="p-4 bg-gray-50 border-t">
+                <div className="flex justify-between items-center mb-4">
+                    <span className="text-sm text-gray-600">Total</span>
+                    <span className="text-xl font-bold text-gray-800">{formatCurrency(getTotal())}</span>
+                </div>
+                <button
+                    onClick={handleCheckout}
+                    disabled={!isCartValid()}
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-300"
+                >
+                    Checkout
+                </button>
             </div>
-          </div>
         </div>
       </div>
 
-      {/* Receipt Modal */}
       {showReceipt && lastTransaction && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 w-full max-w-md">
-            <div className="text-center mb-6">
-              <FaReceipt className="text-6xl text-green-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Transaksi Berhasil!</h2>
-              <p className="text-gray-600">No: {lastTransaction.transactionNumber}</p>
-              <p className="text-sm text-gray-500">{formatDate(lastTransaction.createdAt)}</p>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+            <h2 className="text-xl font-bold text-center mb-4 text-green-600 flex items-center justify-center gap-2">
+                <FaReceipt /> Transaksi Berhasil
+            </h2>
+            <div className="space-y-2 text-sm border-y py-4 mb-4">
+                {lastTransaction.items.map((item, i) => (
+                    <div key={i} className="flex justify-between">
+                        <span>{item.productName} x{item.quantity}</span>
+                        <span className="font-bold">{formatCurrency(item.subtotal)}</span>
+                    </div>
+                ))}
             </div>
-
-            <div className="border-t border-b py-4 mb-4">
-              {lastTransaction.items.map((item, index) => (
-                <div key={index} className="flex justify-between mb-2">
-                  <div className="text-sm">
-                    <span className='font-semibold'>{item.productName}</span> <span className='text-gray-700 font-normal'>({item.variantName})</span> x{item.quantity}
-                  </div>
-                  <span className="font-medium">{formatCurrency(item.subtotal)}</span>
-                </div>
-              ))}
+            <div className="flex justify-between font-black text-lg mb-6">
+                <span>TOTAL</span>
+                <span className="text-blue-700">{formatCurrency(lastTransaction.total)}</span>
             </div>
-
-            <div className="text-center mb-6">
-              <p className="text-sm text-gray-600 mb-1">Total</p>
-              <p className="text-3xl font-bold text-blue-600">{formatCurrency(lastTransaction.total)}</p>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                onClick={handlePrintInvoice}
-                className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 font-semibold"
-              >
-                <FaPrint />
-                <span>Cetak Invoice</span>
-              </button>
-              <button
-                onClick={() => setShowReceipt(false)}
-                className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
-              >
-                Tutup
-              </button>
+            <div className="grid grid-cols-2 gap-2">
+                <button onClick={handlePrintInvoice} className="bg-gray-800 text-white py-2 rounded font-bold hover:bg-gray-900 flex items-center justify-center gap-2">
+                    <FaPrint size={14} /> Cetak
+                </button>
+                <button onClick={() => setShowReceipt(false)} className="bg-white border text-gray-600 py-2 rounded font-bold hover:bg-gray-50">Tutup</button>
             </div>
           </div>
         </div>

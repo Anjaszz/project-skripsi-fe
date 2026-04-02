@@ -3,6 +3,7 @@ import { variantAPI } from '../services/api';
 import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
+import { useAuth } from '../context/AuthContext';
 
 const Variants = () => {
   const [variants, setVariants] = useState([]);
@@ -17,6 +18,7 @@ const Variants = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [showInactive, setShowInactive] = useState(false);
   const toast = useToast();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     fetchVariants();
@@ -27,7 +29,7 @@ const Variants = () => {
       const response = await variantAPI.getAll({ includeInactive: showInactive });
       setVariants(response.data.data);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching variants:', error);
       toast.error('Gagal mengambil data variant');
     } finally {
       setLoading(false);
@@ -74,7 +76,7 @@ const Variants = () => {
       fetchVariants();
     } catch (error) {
       console.error('Error:', error);
-      toast.error(error.response?.data?.message || 'Gagal menghapus variant');
+      toast.error('Gagal menghapus variant');
     }
   };
 
@@ -97,90 +99,80 @@ const Variants = () => {
     setEditingId(null);
   };
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-full"><div className="spinner"></div></div>;
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Variant Produk</h1>
-        <div className="flex items-center space-x-2">
-          <label className="flex items-center space-x-2 text-sm">
-            <input
-              type="checkbox"
-              checked={showInactive}
-              onChange={(e) => setShowInactive(e.target.checked)}
-              className="rounded"
-            />
-            <span>Tampilkan Tidak Aktif</span>
-          </label>
-          <button
-            onClick={() => { resetForm(); setShowModal(true); }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 inline-flex items-center space-x-2"
-          >
-            <FaPlus />
-            <span>Tambah Variant</span>
-          </button>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 className="text-2xl font-bold text-gray-800">Variant Produk</h1>
+        <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-sm text-gray-600 bg-white px-3 py-1.5 rounded-lg border shadow-sm">
+                <input
+                    type="checkbox"
+                    checked={showInactive}
+                    onChange={(e) => setShowInactive(e.target.checked)}
+                />
+                Tampilkan Tidak Aktif
+            </label>
+            {isAdmin && (
+                <button
+                    onClick={() => { resetForm(); setShowModal(true); }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold flex items-center justify-center gap-2 shadow-sm"
+                >
+                    <FaPlus /> <span>Tambah Variant</span>
+                </button>
+            )}
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-white rounded-lg shadow-sm border overflow-x-auto">
+        <table className="w-full text-left">
+          <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Variant</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deskripsi</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase">Nama Variant</th>
+              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase">Deskripsi</th>
+              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase">Status</th>
+              {isAdmin && <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase text-center">Aksi</th>}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y">
             {variants.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                  Belum ada data variant
-                </td>
-              </tr>
-            ) : (
-              variants.map((variant, index) => (
-                <tr key={variant._id}>
-                  <td className="px-6 py-4">{index + 1}</td>
-                  <td className="px-6 py-4 font-medium">{variant.name}</td>
-                  <td className="px-6 py-4 text-gray-600">{variant.description || '-'}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs ${variant.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {variant.isActive ? 'Aktif' : 'Tidak Aktif'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => handleToggle(variant._id)}
-                        className={`${variant.isActive ? 'text-green-600 hover:text-green-900' : 'text-gray-400 hover:text-gray-600'}`}
-                        title={variant.isActive ? 'Nonaktifkan' : 'Aktifkan'}
-                      >
-                        {variant.isActive ? <FaToggleOn size={20} /> : <FaToggleOff size={20} />}
-                      </button>
-                      <button
-                        onClick={() => handleEdit(variant)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Edit"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(variant._id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Hapus"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
-                  </td>
+                <tr>
+                    <td colSpan={isAdmin ? "4" : "3"} className="px-6 py-12 text-center text-gray-400 font-medium">Belum ada data variant</td>
                 </tr>
-              ))
+            ) : (
+                variants.map((v) => (
+                    <tr key={v._id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 font-bold text-gray-800">{v.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{v.description || '-'}</td>
+                        <td className="px-6 py-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${v.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                {v.isActive ? 'Aktif' : 'Tidak Aktif'}
+                            </span>
+                        </td>
+                        {isAdmin && (
+                            <td className="px-6 py-4">
+                                <div className="flex items-center justify-center gap-2">
+                                    <button onClick={() => handleToggle(v._id)} className={`${v.isActive ? 'text-green-600' : 'text-gray-400'} p-2 rounded-lg border hover:bg-gray-50 transition-colors shadow-sm`}>
+                                        {v.isActive ? <FaToggleOn size={20} /> : <FaToggleOff size={20} />}
+                                    </button>
+                                    <button onClick={() => handleEdit(v)} className="text-blue-600 p-2 rounded-lg border hover:bg-gray-50 transition-colors shadow-sm"><FaEdit /></button>
+                                    <button onClick={() => handleDelete(v._id)} className="text-red-600 p-2 rounded-lg border hover:bg-gray-50 transition-colors shadow-sm"><FaTrash /></button>
+                                </div>
+                            </td>
+                        )}
+                    </tr>
+                ))
             )}
           </tbody>
         </table>
@@ -188,58 +180,46 @@ const Variants = () => {
 
       {/* Modal Form */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-4">{editingId ? 'Edit Variant' : 'Tambah Variant'}</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Nama Variant *</label>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+            <div className="bg-blue-600 p-4 text-white font-bold text-lg">
+                {editingId ? 'Edit Variant' : 'Tambah Variant'}
+            </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Nama Variant</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Contoh: Rasa, Ukuran, Warna"
+                  className="w-full border rounded-lg px-4 py-2"
                   required
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Deskripsi</label>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Deskripsi</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Deskripsi variant (opsional)"
+                  className="w-full border rounded-lg px-4 py-2"
                   rows="3"
                 />
               </div>
-              <div className="flex space-x-2">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Simpan
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowModal(false); resetForm(); }}
-                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-                >
-                  Batal
-                </button>
+              <div className="flex gap-2 pt-4">
+                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 bg-gray-100 py-2 rounded-lg font-bold">Batal</button>
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold">Simpan</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDelete}
-        title="Konfirmasi Hapus"
-        message="Apakah Anda yakin ingin menghapus variant ini? Variant yang sedang digunakan oleh produk tidak dapat dihapus."
+        title="Hapus Variant"
+        message="Hapus variant ini? Pastikan tidak sedang digunakan oleh produk."
         confirmText="Hapus"
         cancelText="Batal"
         type="danger"

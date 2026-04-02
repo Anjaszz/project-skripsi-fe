@@ -61,6 +61,41 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (userData) => {
+    try {
+      const response = await authAPI.register(userData);
+      const { token, ...data } = response.data.data;
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(data));
+      setUser(data);
+      
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Registrasi gagal'
+      };
+    }
+  };
+
+  const updateProfile = async (userData) => {
+    try {
+      const response = await authAPI.updateMe(userData);
+      const updatedUser = response.data.data;
+      
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Gagal update profil'
+      };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -71,6 +106,8 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     login,
+    register,
+    updateProfile,
     logout,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',

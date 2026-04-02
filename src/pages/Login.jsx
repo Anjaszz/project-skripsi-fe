@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaUser, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaUser, FaLock, FaEye, FaEyeSlash, FaArrowRight, FaTimesCircle } from 'react-icons/fa';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -18,8 +18,11 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = 'Staff Login | Amanah Hub';
     if (user) {
-      if (user.role === 'admin') {
+      if (user.role === 'customer') {
+        navigate('/');
+      } else if (user.role === 'admin') {
         navigate('/dashboard');
       } else {
         navigate('/kasir');
@@ -96,131 +99,102 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black opacity-20"></div>
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden font-sans">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-900/30 rounded-full blur-[120px]"></div>
+      </div>
 
-      <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all hover:shadow-3xl">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mb-4 shadow-lg">
-            <FaLock className="text-white text-2xl" />
-          </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Inventory & Kasir
-          </h1>
-          <p className="text-gray-600 text-sm">Silakan login untuk melanjutkan</p>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg mb-6 animate-shake">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <span className="text-sm font-medium">{error}</span>
+      <div className="relative w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
+        <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl overflow-hidden p-10 border border-white/20">
+          <div className="text-center mb-10">
+             <div className="inline-flex items-center gap-3 mb-6 group">
+                <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-200 group-hover:scale-110 transition-transform duration-500">
+                    <FaLock size={24} />
+                </div>
             </div>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tighter italic uppercase leading-none">
+                Amanah <span className="text-blue-600">Hub</span>
+            </h1>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-3 italic">Management Portal</p>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-gray-700 text-sm font-semibold mb-2">
-              Username
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaUser className={`${validationErrors.username ? 'text-red-400' : 'text-gray-400'} transition-colors`} />
+          {error && (
+            <div className="bg-red-50 border border-red-100 text-red-600 px-5 py-4 rounded-2xl mb-8 flex items-center gap-3 animate-in slide-in-from-top-4 duration-300">
+              <FaTimesCircle className="flex-shrink-0" />
+              <span className="text-xs font-black uppercase tracking-tight italic">{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Username</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-600 transition-colors">
+                  <FaUser size={14} />
+                </div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={handleUsernameChange}
+                  className={`w-full pl-14 pr-6 py-4 bg-slate-50 border-0 rounded-2xl outline-none ring-2 ring-transparent transition-all duration-300 focus:ring-blue-600 focus:bg-white font-bold text-sm ${
+                    validationErrors.username ? 'ring-red-500 bg-red-50' : ''
+                  }`}
+                  placeholder="admin.office"
+                />
               </div>
-              <input
-                type="text"
-                value={username}
-                onChange={handleUsernameChange}
-                className={`w-full pl-10 pr-3 py-3 border ${
-                  validationErrors.username
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                    : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
-                } rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 bg-gray-50 hover:bg-white`}
-                placeholder="Masukkan username"
-              />
+              {validationErrors.username && <p className="text-[9px] text-red-500 font-black uppercase tracking-widest ml-1 italic">{validationErrors.username}</p>}
             </div>
-            {validationErrors.username && (
-              <p className="mt-1 text-sm text-red-600 flex items-center animate-fadeIn">
-                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {validationErrors.username}
-              </p>
-            )}
-          </div>
 
-          <div>
-            <label className="block text-gray-700 text-sm font-semibold mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaLock className={`${validationErrors.password ? 'text-red-400' : 'text-gray-400'} transition-colors`} />
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Kata Sandi</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-600 transition-colors">
+                  <FaLock size={14} />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={handlePasswordChange}
+                  className={`w-full pl-14 pr-14 py-4 bg-slate-50 border-0 rounded-2xl outline-none ring-2 ring-transparent transition-all duration-300 focus:ring-blue-600 focus:bg-white font-bold text-sm ${
+                    validationErrors.password ? 'ring-red-500 bg-red-50' : ''
+                  }`}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-6 flex items-center text-slate-300 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                </button>
               </div>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={handlePasswordChange}
-                className={`w-full pl-10 pr-12 py-3 border ${
-                  validationErrors.password
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                    : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
-                } rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 bg-gray-50 hover:bg-white`}
-                placeholder="Masukkan password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showPassword ? (
-                  <FaEyeSlash className="w-5 h-5" />
-                ) : (
-                  <FaEye className="w-5 h-5" />
-                )}
-              </button>
+              {validationErrors.password && <p className="text-[9px] text-red-500 font-black uppercase tracking-widest ml-1 italic">{validationErrors.password}</p>}
             </div>
-            {validationErrors.password && (
-              <p className="mt-1 text-sm text-red-600 flex items-center animate-fadeIn">
-                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {validationErrors.password}
-              </p>
-            )}
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Memproses...
-              </span>
-            ) : (
-              'Login'
-            )}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-slate-900 text-white py-5 px-6 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] hover:bg-blue-600 active:scale-95 transition-all shadow-2xl shadow-slate-200 disabled:opacity-50 italic flex items-center justify-center gap-3 group mt-4"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    <span>Mengautentikasi...</span>
+                </div>
+              ) : (
+                <>
+                    <span>Masuk ke Dashboard</span>
+                    <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
+          </form>
 
-        <div className="mt-6 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-2 bg-white text-gray-500">Sistem Manajemen Inventory</span>
-            </div>
-          </div>
+          <p className="text-center text-[10px] text-slate-300 font-black uppercase tracking-[0.2em] mt-10 italic">
+            © 2026 Amanah Lintang Hub — v2.0
+          </p>
         </div>
       </div>
     </div>

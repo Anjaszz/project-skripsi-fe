@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const PrivateRoute = ({ children, requiredRole }) => {
+const PrivateRoute = ({ children, requiredRole, redirectTo }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -13,11 +13,21 @@ const PrivateRoute = ({ children, requiredRole }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    if (redirectTo) return <Navigate to={redirectTo} replace />;
+    
+    // Auto-detect based on requiredRole if possible
+    const isCustomerRoute = Array.isArray(requiredRole) 
+      ? requiredRole.includes('customer') 
+      : requiredRole === 'customer';
+    
+    return <Navigate to={isCustomerRoute ? "/auth" : "/login"} replace />;
   }
 
-  if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to="/kasir" replace />;
+  const isAllowed = !requiredRole || 
+                   (Array.isArray(requiredRole) ? requiredRole.includes(user.role) : user.role === requiredRole);
+
+  if (requiredRole && !isAllowed) {
+    return <Navigate to="/" replace />;
   }
 
   return children;

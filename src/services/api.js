@@ -27,10 +27,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Only redirect to /login if it's NOT an auth request (login/register)
+    // and if the status is 401 (Unauthorized)
+    const isAuthRequest = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/register');
+    
+    if (error.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // decide where to redirect based on current path? 
+      // simple approach: don't force redirect here, let the component handle it or PrivateRoute
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   }
@@ -41,6 +47,8 @@ export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
   getMe: () => api.get('/auth/me'),
+  updateMe: (userData) => api.put('/auth/me', userData),
+  getCustomers: () => api.get('/auth/customers'),
 };
 
 // Variant APIs
@@ -64,6 +72,15 @@ export const inventoryAPI = {
   getForKasir: () => api.get('/inventory/kasir'),
 };
 
+// Menu APIs
+export const menuAPI = {
+  getAll: (params) => api.get('/menu', { params }),
+  getById: (id) => api.get(`/menu/${id}`),
+  create: (data) => api.post('/menu', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  update: (id, data) => api.put(`/menu/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  delete: (id) => api.delete(`/menu/${id}`),
+};
+
 // Kasir APIs
 export const kasirAPI = {
   createTransaction: (data) => api.post('/kasir/transaction', data),
@@ -76,7 +93,7 @@ export const kasirAPI = {
 export const dashboardAPI = {
   getSummary: () => api.get('/dashboard/summary'),
   getSalesReport: (params) => api.get('/dashboard/sales-report', { params }),
-  getStockReport: () => api.get('/dashboard/stock-report'),
+  getStockReport: (params) => api.get('/dashboard/stock-report', { params }),
   getTransactionReport: (params) => api.get('/dashboard/transaction-report', { params }),
 };
 
@@ -84,8 +101,8 @@ export const dashboardAPI = {
 export const exportAPI = {
   salesExcel: (params) => api.get('/export/sales/excel', { params, responseType: 'blob' }),
   salesPDF: (params) => api.get('/export/sales/pdf', { params, responseType: 'blob' }),
-  stockExcel: () => api.get('/export/stock/excel', { responseType: 'blob' }),
-  stockPDF: () => api.get('/export/stock/pdf', { responseType: 'blob' }),
+  stockExcel: (params) => api.get('/export/stock/excel', { params, responseType: 'blob' }),
+  stockPDF: (params) => api.get('/export/stock/pdf', { params, responseType: 'blob' }),
   transactionsExcel: (params) => api.get('/export/transactions/excel', { params, responseType: 'blob' }),
   transactionsPDF: (params) => api.get('/export/transactions/pdf', { params, responseType: 'blob' }),
   stockHistoryExcel: (data) => api.post('/export/stock-history/excel', data, { responseType: 'blob' }),
