@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { menuAPI, kasirAPI } from '../services/api';
+import { menuAPI, kasirAPI, inventoryAPI } from '../services/api';
 import { FaPlus, FaMinus, FaTrash, FaShoppingCart, FaReceipt, FaPrint, FaSearch, FaTimes, FaImage } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 import { jsPDF } from 'jspdf';
@@ -22,13 +22,25 @@ const Kasir = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await menuAPI.getAll({ isActive: true });
-      // Only items with linked inventory and stock > 0
-      const activeProducts = response.data.data.filter(item => item.inventory && item.inventory.stock > 0);
-      setProducts(activeProducts);
+      const response = await inventoryAPI.getForKasir();
+      // Map Inventory products to a structure Kasir page expects
+      const mappedProducts = response.data.data.map(item => ({
+        ...item,
+        _id: item._id,
+        name: item.name + (item.variantName ? ` - ${item.variantName}` : ''),
+        price: item.purchasePrice || 0, // Default selling price to latest purchase price
+        image: null, // Inventory doesn't have images
+        variants: [], // Inventory variants are handled in name
+        wholesalePrices: [], // Inventory doesn't have wholesale rules
+        inventory: {
+          _id: item._id,
+          stock: item.stock
+        }
+      }));
+      setProducts(mappedProducts);
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Gagal mengambil data produk menu');
+      toast.error('Gagal mengambil data produk inventory');
     } finally {
       setLoading(false);
     }
@@ -169,7 +181,7 @@ const Kasir = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Kasir (Menu Jual)</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Kasir (Stok Inventory)</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -179,7 +191,7 @@ const Kasir = () => {
             <FaSearch className="absolute left-7 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Cari menu produk..."
+              placeholder="Cari barang di inventory..."
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -219,7 +231,7 @@ const Kasir = () => {
                     onClick={() => addToCart(product)}
                     className="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors"
                   >
-                    Pilih Menu
+                    Pilih Barang
                   </button>
                 </div>
               </div>

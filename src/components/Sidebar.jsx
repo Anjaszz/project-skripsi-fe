@@ -29,26 +29,23 @@ const Sidebar = () => {
     // 1. Dashboard (Admin)
     ...(isAdmin ? [{ path: '/dashboard', label: 'Dashboard', icon: FaChartLine }] : []),
     
-    // 2. Kasir
-    { path: '/kasir', label: 'Kasir', icon: FaCashRegister },
-    
-    // 3. Pesanan Online
-    { path: '/pesanan', label: 'Pesanan Online', icon: FaClipboardList },
-    
-    // 4. Inventory
+    // 2. Inventory
     { path: '/inventory', label: 'Inventory', icon: FaBox },
     
-    // 5. Produk
-    { path: '/produk', label: 'Produk', icon: FaStore },
-    
-    // 6. Laporan
-    { path: '/laporan', label: 'Laporan', icon: FaFileAlt },
-    
-    // 7. Riwayat Stok
-    { path: '/stock-history', label: 'Riwayat Stok', icon: FaHistory },
-    
-    // 8. Variant
+    // 3. Variant
     { path: '/variants', label: 'Variant', icon: FaTags },
+
+    // 4. Laporan (Admin)
+    ...(isAdmin ? [{ path: '/laporan', label: 'Laporan', icon: FaFileAlt }] : []),
+
+    // 5. Kasir
+    { path: '/kasir', label: 'Kasir', icon: FaCashRegister },
+    
+    // 6. Pesanan Online
+    { path: '/pesanan', label: 'Pesanan Online', icon: FaClipboardList },
+    
+    // 7. Produk
+    { path: '/produk', label: 'Produk', icon: FaStore },
 
     // 9. Daftar Pelanggan (Admin)
     ...(isAdmin ? [{ path: '/customers', label: 'Daftar Pelanggan', icon: FaUser }] : []),

@@ -76,13 +76,6 @@ const Dashboard = () => {
       color: 'bg-green-600'
     },
     {
-      title: 'Keuntungan Hari Ini',
-      value: formatCurrency(summary?.today?.profit || 0),
-      subtitle: <span className="text-purple-400">Data Offline (Kasir)</span>,
-      icon: FaChartLine,
-      color: 'bg-indigo-600'
-    },
-    {
       title: 'Stok Hampir Habis',
       value: summary?.inventory?.lowStockProducts || 0,
       icon: FaBox,

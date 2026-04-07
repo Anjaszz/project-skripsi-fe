@@ -1,16 +1,25 @@
 import { useState, useEffect } from 'react';
-import { dashboardAPI, exportAPI } from '../services/api';
-import { FaFileExcel, FaFilePdf, FaCalendar, FaEye, FaTimes } from 'react-icons/fa';
+import { dashboardAPI, exportAPI, inventoryAPI, variantAPI } from '../services/api';
+import { FaFileExcel, FaFilePdf, FaCalendar, FaEye, FaTimes, FaHistory, FaSearch, FaFilter } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 
 const Laporan = () => {
-  const [activeTab, setActiveTab] = useState('sales');
+  const [activeTab, setActiveTab] = useState('purchases');
   const [salesReport, setSalesReport] = useState(null);
   const [stockReport, setStockReport] = useState(null);
   const [transactionReport, setTransactionReport] = useState(null);
+  const [purchaseReport, setPurchaseReport] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [variants, setVariants] = useState([]);
+  
   const [selectedTrx, setSelectedTrx] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [productFilter, setProductFilter] = useState('');
+  const [variantFilter, setVariantFilter] = useState('');
+  
   const [dateRange, setDateRange] = useState(() => {
     const end = new Date();
     const start = new Date();
@@ -31,14 +40,20 @@ const Laporan = () => {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const [sales, stock, transactions] = await Promise.all([
+      const [sales, stock, transactions, history, productsRes, variantsRes] = await Promise.all([
         dashboardAPI.getSalesReport(dateRange),
         dashboardAPI.getStockReport(dateRange),
-        dashboardAPI.getTransactionReport(dateRange)
+        dashboardAPI.getTransactionReport(dateRange),
+        inventoryAPI.getHistory(),
+        inventoryAPI.getAll(),
+        variantAPI.getAll()
       ]);
       setSalesReport(sales.data.data);
       setStockReport(stock.data.data);
       setTransactionReport(transactions.data.data);
+      setPurchaseReport(history.data.data);
+      setProducts(productsRes.data.data);
+      setVariants(variantsRes.data.data);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Gagal mengambil data laporan');
@@ -71,6 +86,15 @@ const Laporan = () => {
       } else if (type === 'transactions') {
         response = format === 'excel' ? await exportAPI.transactionsExcel(dateRange) : await exportAPI.transactionsPDF(dateRange);
         downloadFile(response.data, `Laporan_Transaksi_${timestamp}.${format === 'excel' ? 'xlsx' : 'pdf'}`);
+      } else if (type === 'purchases') {
+        const filters = {
+            productId: productFilter,
+            variantId: variantFilter === 'none' ? 'null' : (variants.find(v => v.name === variantFilter)?._id || ''),
+            startDate: dateRange.startDate,
+            endDate: dateRange.endDate
+        };
+        response = format === 'excel' ? await exportAPI.stockHistoryExcel(filters) : await exportAPI.stockHistoryPDF(filters);
+        downloadFile(response.data, `Laporan_Pembelian_${timestamp}.${format === 'excel' ? 'xlsx' : 'pdf'}`);
       }
       toast.success('File berhasil didownload!');
     } catch (error) {
@@ -91,10 +115,37 @@ const Laporan = () => {
     return new Date(date).toLocaleDateString('id-ID');
   };
 
+  const filteredPurchases = purchaseReport.filter(item => {
+    const matchSearch = searchTerm === '' ||
+                       item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       (item.variantName && item.variantName.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchProduct = productFilter === '' || item.productId === productFilter;
+    
+    const matchVariant = variantFilter === '' ||
+                        (variantFilter === 'none' && !item.variantName) ||
+                        item.variantName === variantFilter;
+    
+    const itemDate = new Date(item.dateAdded);
+    const start = new Date(dateRange.startDate);
+    const end = new Date(dateRange.endDate);
+    end.setHours(23, 59, 59, 999);
+    const matchDate = itemDate >= start && itemDate <= end;
+
+    return matchSearch && matchProduct && matchVariant && matchDate;
+  });
+
+  const purchaseSummary = {
+      totalEntries: filteredPurchases.length,
+      totalQuantity: filteredPurchases.reduce((sum, item) => sum + item.quantity, 0),
+      totalValue: filteredPurchases.reduce((sum, item) => sum + item.totalPurchase, 0)
+  };
+
   const tabs = [
+    { id: 'purchases', label: 'Pembelian' },
     { id: 'sales', label: 'Penjualan' },
     { id: 'stock', label: 'Analisa Produk' },
-    { id: 'transactions', label: 'Transaksi' }
+    { id: 'summary', label: 'Summary' }
   ];
 
   return (
@@ -105,12 +156,12 @@ const Laporan = () => {
 
       {/* Tabs & Filters Card */}
       <div className="bg-white p-6 rounded-lg shadow-sm border space-y-6">
-        <div className="flex border-b">
+        <div className="flex border-b overflow-x-auto">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 font-bold text-sm uppercase transition-colors border-b-2 ${
+              className={`px-6 py-3 font-bold text-sm uppercase transition-colors border-b-2 whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-400 hover:text-gray-600'
@@ -147,6 +198,38 @@ const Laporan = () => {
                 </button>
             </div>
         </div>
+
+        {activeTab === 'purchases' && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t">
+              <div className="relative">
+                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Cari barang..."
+                    className="w-full pl-9 pr-4 py-2 border rounded text-xs"
+                  />
+              </div>
+              <select
+                value={productFilter}
+                onChange={(e) => setProductFilter(e.target.value)}
+                className="border rounded px-3 py-2 text-xs"
+              >
+                  <option value="">Semua Barang</option>
+                  {products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+              </select>
+              <select
+                value={variantFilter}
+                onChange={(e) => setVariantFilter(e.target.value)}
+                className="border rounded px-3 py-2 text-xs"
+              >
+                  <option value="">Semua Variant</option>
+                  <option value="none">Tanpa Variant</option>
+                  {[...new Set(purchaseReport.map(h => h.variantName).filter(Boolean))].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}
@@ -161,20 +244,18 @@ const Laporan = () => {
             <div className="p-6">
               {activeTab === 'sales' && salesReport && (
                 <div className="space-y-8">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                           <p className="text-xs text-blue-600 font-bold uppercase mb-1">Total Penjualan</p>
                           <p className="text-xl font-bold text-blue-900">{formatCurrency(salesReport.summary?.totalSales || 0)}</p>
                       </div>
-                      {isAdmin && (
-                          <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
-                              <p className="text-xs text-emerald-600 font-bold uppercase mb-1">Total Keuntungan</p>
-                              <p className="text-xl font-bold text-emerald-900">{formatCurrency(salesReport.summary?.totalProfit || 0)}</p>
-                          </div>
-                      )}
                       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                           <p className="text-xs text-gray-500 font-bold uppercase mb-1">Transaksi</p>
                           <p className="text-xl font-bold text-gray-800">{salesReport.summary?.totalTransactions || 0}</p>
+                      </div>
+                      <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                          <p className="text-xs text-amber-600 font-bold uppercase mb-1">Total Item Terjual</p>
+                          <p className="text-xl font-bold text-amber-900">{salesReport.summary?.totalItems || 0}</p>
                       </div>
                   </div>
 
@@ -210,8 +291,73 @@ const Laporan = () => {
                 </div>
               )}
 
+              {activeTab === 'purchases' && (
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                          <p className="text-xs text-gray-500 font-bold uppercase mb-1">Total Entri</p>
+                          <p className="text-xl font-bold text-gray-800">{purchaseSummary.totalEntries}</p>
+                      </div>
+                      <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                          <p className="text-xs text-indigo-600 font-bold uppercase mb-1">Total Item Masuk</p>
+                          <p className="text-xl font-bold text-indigo-900">{purchaseSummary.totalQuantity.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                          <p className="text-xs text-purple-600 font-bold uppercase mb-1">Total Nilai Pembelian</p>
+                          <p className="text-xl font-bold text-purple-900">{formatCurrency(purchaseSummary.totalValue)}</p>
+                      </div>
+                  </div>
+
+                  <div className="overflow-x-auto border rounded-lg">
+                      <table className="w-full text-left text-sm">
+                          <thead className="bg-gray-50 border-b">
+                              <tr>
+                                  <th className="px-4 py-3 font-bold text-gray-600 uppercase">Tanggal</th>
+                                  <th className="px-4 py-3 font-bold text-gray-600 uppercase">Barang</th>
+                                  <th className="px-4 py-3 font-bold text-gray-600 uppercase">Variant</th>
+                                  <th className="px-4 py-3 font-bold text-gray-600 uppercase text-right">Qty</th>
+                                  <th className="px-4 py-3 font-bold text-gray-600 uppercase text-right">Harga Beli</th>
+                                  <th className="px-4 py-3 font-bold text-gray-600 uppercase text-right">Subtotal</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                              {filteredPurchases.length > 0 ? (
+                                  filteredPurchases.map((item, i) => (
+                                      <tr key={i} className="hover:bg-gray-50">
+                                          <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(item.dateAdded)}</td>
+                                          <td className="px-4 py-3 font-bold text-gray-800">{item.productName}</td>
+                                          <td className="px-4 py-3 text-gray-600">{item.variantName || '-'}</td>
+                                          <td className="px-4 py-3 text-right font-bold">{item.quantity}</td>
+                                          <td className="px-4 py-3 text-right text-gray-600">{formatCurrency(item.purchasePrice)}</td>
+                                          <td className="px-4 py-3 text-right font-black text-indigo-600">{formatCurrency(item.totalPurchase)}</td>
+                                      </tr>
+                                  ))
+                              ) : (
+                                  <tr><td colSpan="6" className="px-6 py-12 text-center text-gray-400">Tidak ada data pembelian</td></tr>
+                              )}
+                          </tbody>
+                      </table>
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'stock' && stockReport && (
                 <div className="space-y-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 italic">
+                          <p className="text-xs text-blue-600 font-bold uppercase mb-1">Total Asset Pembelian</p>
+                          <p className="text-xl font-black text-blue-900">{formatCurrency(stockReport.summary?.totalValue || 0)}</p>
+                      </div>
+                      <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 italic">
+                          <p className="text-xs text-amber-600 font-bold uppercase mb-1">Potensi Penjualan</p>
+                          <p className="text-xl font-black text-amber-900">{formatCurrency(stockReport.summary?.totalPotentialSales || 0)}</p>
+                      </div>
+                      <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 italic">
+                          <p className="text-xs text-emerald-600 font-bold uppercase mb-1">Potensi Keuntungan</p>
+                          <p className="text-xl font-black text-emerald-900">{formatCurrency(stockReport.summary?.totalPotentialProfit || 0)}</p>
+                      </div>
+                  </div>
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Top Products */}
                     <div className="space-y-4">
@@ -285,33 +431,38 @@ const Laporan = () => {
                 </div>
               )}
 
-              {activeTab === 'transactions' && transactionReport && (
-                <div className="space-y-4">
-                  <div className="overflow-x-auto border rounded-lg">
-                      <table className="w-full text-left text-sm">
-                          <thead className="bg-gray-50 border-b">
-                              <tr>
-                                  <th className="px-6 py-3 font-bold text-gray-600 uppercase">Waktu</th>
-                                  <th className="px-6 py-3 font-bold text-gray-600 uppercase">No. Transaksi</th>
-                                  <th className="px-6 py-3 font-bold text-gray-600 uppercase">Kasir</th>
-                                  <th className="px-6 py-3 font-bold text-gray-600 uppercase text-right">Total</th>
-                              </tr>
-                          </thead>
-                          <tbody className="divide-y">
-                              {transactionReport.transactions?.length > 0 ? (
-                                transactionReport.transactions.map((trx) => (
-                                  <tr key={trx._id} className="hover:bg-gray-50">
-                                      <td className="px-6 py-4 text-gray-500">{formatDate(trx.createdAt)}</td>
-                                      <td className="px-6 py-4 font-bold text-gray-800">{trx.transactionNumber}</td>
-                                      <td className="px-6 py-4 text-gray-600">{trx.cashierName}</td>
-                                      <td className="px-6 py-4 text-right font-black text-blue-600">{formatCurrency(trx.total)}</td>
-                                  </tr>
-                                ))
-                              ) : (
-                                <tr><td colSpan="4" className="px-6 py-12 text-center text-gray-400">Tidak ada transaksi di periode ini</td></tr>
-                              )}
-                          </tbody>
-                      </table>
+              {activeTab === 'summary' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                      <div className="bg-purple-50 p-4 rounded-lg border border-purple-100 italic">
+                          <p className="text-xs text-purple-600 font-bold uppercase mb-1">Total Pembelian</p>
+                          <p className="text-xl font-black text-purple-900">{formatCurrency(purchaseSummary.totalValue)}</p>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 italic">
+                          <p className="text-xs text-blue-600 font-bold uppercase mb-1">Total Penjualan</p>
+                          <p className="text-xl font-black text-blue-900">{formatCurrency(salesReport?.summary?.totalSales || 0)}</p>
+                      </div>
+                      <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 italic">
+                          <p className="text-xs text-emerald-600 font-bold uppercase mb-1">Total Keuntungan</p>
+                          <p className="text-xl font-black text-emerald-900">{formatCurrency(salesReport?.summary?.totalProfit || 0)}</p>
+                      </div>
+                      <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 italic">
+                          <p className="text-xs text-indigo-600 font-bold uppercase mb-1">Total Item Masuk</p>
+                          <p className="text-xl font-black text-indigo-900">{purchaseSummary.totalQuantity.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 italic">
+                          <p className="text-xs text-amber-600 font-bold uppercase mb-1">Total Item Terjual</p>
+                          <p className="text-xl font-black text-amber-900">{salesReport?.summary?.totalItems || 0}</p>
+                      </div>
+                      <div className="bg-red-50 p-4 rounded-lg border border-red-100 italic font-bold">
+                          <p className="text-xs text-red-600 font-bold uppercase mb-1">Total Sisa Item</p>
+                          <p className="text-xl font-black text-red-900">{stockReport?.summary?.totalStock || 0}</p>
+                      </div>
+                  </div>
+                  
+                  {/* Optional: Add a small disclaimer or info */}
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-xs text-gray-500 font-medium">
+                      * Data di atas diambil berdasarkan rentang tanggal yang dipilih di bagian atas halaman laporan ini.
                   </div>
                 </div>
               )}

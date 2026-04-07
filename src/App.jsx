@@ -6,7 +6,6 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Variants from './pages/Variants';
 import Inventory from './pages/Inventory';
-import StockHistory from './pages/StockHistory';
 import Kasir from './pages/Kasir';
 import Laporan from './pages/Laporan';
 import Produk from './pages/Produk';
@@ -45,10 +44,9 @@ function App() {
               <Route path="variants" element={<Variants />} />
               <Route path="produk" element={<Produk />} />
               <Route path="inventory" element={<Inventory />} />
-              <Route path="stock-history" element={<StockHistory />} />
               <Route path="customers" element={<PrivateRoute requiredRole={['admin', 'developer']}><DaftarPelanggan /></PrivateRoute>} />
               <Route path="kasir" element={<Kasir />} />
-              <Route path="laporan" element={<Laporan />} />
+              <Route path="laporan" element={<PrivateRoute requiredRole="admin"><Laporan /></PrivateRoute>} />
               <Route path="pesanan" element={<Pesanan />} />
               <Route path="payment-settings" element={<PrivateRoute requiredRole="admin"><AdminPaymentSettings /></PrivateRoute>} />
             </Route>
