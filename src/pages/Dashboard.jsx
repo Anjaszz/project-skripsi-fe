@@ -84,19 +84,19 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+    <div className="space-y-4 md:space-y-6">
+      <h1 className="text-xl md:text-2xl font-bold text-gray-800">Dashboard</h1>
       
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-white rounded-lg shadow p-6 border border-gray-200">
+            <div key={index} className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">{stat.title}</p>
-                  <p className="text-xl font-black text-gray-800 italic">{stat.value}</p>
+                  <p className="text-gray-500 text-[9px] md:text-[10px] font-black uppercase tracking-widest">{stat.title}</p>
+                  <p className="text-lg md:text-xl font-black text-gray-800 italic">{stat.value}</p>
                   {stat.subtitle && (
                     <div className="text-[9px] font-bold mt-1 uppercase tracking-tighter">
                       {stat.subtitle}
@@ -112,11 +112,11 @@ const Dashboard = () => {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Sales Chart */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow p-6 border border-gray-200">
-          <h2 className="text-lg font-bold text-gray-800 mb-6">Tren Penjualan Mingguan</h2>
-          <div className="h-[350px]">
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-200">
+          <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4 md:mb-6">Tren Penjualan Mingguan</h2>
+          <div className="h-[300px] md:h-[350px]">
             {salesData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={salesData.slice(-7)}>
@@ -194,8 +194,8 @@ const Dashboard = () => {
         </div>
 
         {/* Inventory Summary */}
-        <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-6">Inventory Status</h2>
+        <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-200">
+            <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4 md:mb-6">Inventory Status</h2>
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
