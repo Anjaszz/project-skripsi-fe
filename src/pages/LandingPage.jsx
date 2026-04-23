@@ -4,7 +4,7 @@ import { FaShoppingCart, FaSearch, FaPhoneAlt, FaMapMarkerAlt, FaWhatsapp, FaTra
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Link, useNavigate } from 'react-router-dom';
-import heroImage from '../assets/hero-image.jpeg';
+import heroImage from '../assets/hero-image.webp';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -217,23 +217,24 @@ const LandingPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white font-sans text-slate-800">
+        <div className="min-h-screen bg-white font-sans text-slate-950">
             {/* Header Modern Clean */}
             <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-md py-3 shadow-sm' : 'bg-transparent py-5'}`}>
                 <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-                    <Link to="/" className="flex items-center gap-3 group">
+                    <Link to="/" className="flex items-center gap-3 group" aria-label="Pd. Amanah Lintang Home">
                         <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white rotate-3 group-hover:rotate-0 transition-transform">
                             <FaTint size={22} />
                         </div>
                         <div className="flex flex-col -space-y-1">
                              <span className="text-xl font-black italic tracking-tighter">Pd. Amanah</span>
-                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Distributor Hub</span>
+                             <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest leading-none">Distributor Hub</span>
                         </div>
                     </Link>
 
-                    <nav className="hidden lg:flex items-center gap-12 text-[13px] font-black uppercase tracking-widest text-slate-500">
+                    <nav className="hidden lg:flex items-center gap-12 text-[13px] font-black uppercase tracking-widest text-slate-600">
                         <a href="#produk" className="hover:text-slate-900 transition-colors italic">Daftar Produk</a>
                         <a href="#about" className="hover:text-slate-900 transition-colors italic">Tentang Kami</a>
+                        <a href="#vision" className="hover:text-slate-900 transition-colors italic">Visi & Misi</a>
                         <a href="#contact" className="hover:text-slate-900 transition-colors italic">Kontak Logistik</a>
                     </nav>
 
@@ -241,6 +242,7 @@ const LandingPage = () => {
                         <button 
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className="lg:hidden p-3 bg-slate-900 text-white rounded-xl"
+                            aria-label="Toggle Mobile Menu"
                         >
                             <FaBars size={18} />
                         </button>
@@ -263,7 +265,7 @@ const LandingPage = () => {
                                Masuk / Daftar <FaArrowRight size={10} />
                            </Link>
                         )}
-                        <button onClick={() => setIsCartOpen(true)} className="relative p-3 bg-white border border-slate-100 rounded-xl text-slate-800 hover:bg-slate-50 transition-all">
+                        <button onClick={() => setIsCartOpen(true)} className="relative p-3 bg-white border border-slate-100 rounded-xl text-slate-800 hover:bg-slate-50 transition-all" aria-label="Open Shopping Cart">
                             <FaShoppingCart size={18} />
                             {cart.length > 0 && (
                                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white ring-px ring-red-200 animate-bounce">{cart.length}</span>
@@ -278,6 +280,7 @@ const LandingPage = () => {
                         <nav className="flex flex-col gap-4 text-sm font-black uppercase tracking-widest text-slate-500">
                             <a href="#produk" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-slate-900 italic">Daftar Produk</a>
                             <a href="#about" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-slate-900 italic">Tentang Kami</a>
+                            <a href="#vision" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-slate-900 italic">Visi & Misi</a>
                             <a href="#contact" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-slate-900 italic">Kontak Logistik</a>
                         </nav>
                         <div className="pt-4 border-t border-slate-50 flex flex-col gap-3">
@@ -293,6 +296,7 @@ const LandingPage = () => {
                 )}
             </header>
 
+            <main>
             {/* Hero Section Clean */}
             <section className="relative pt-32 pb-20 px-6 overflow-hidden">
                 <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
@@ -304,7 +308,7 @@ const LandingPage = () => {
                             <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.95] italic">
                                 Pusat Grosir <br /> & Distributor <span className="text-blue-600">Air Mineral</span>
                             </h1>
-                            <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-lg">
+                            <p className="text-slate-500 text-lg font-medium leading-relaxed max-w-lg">
                                 Penyuplai utama air mineral berbagai merk untuk kebutuhan toko, kantor, hingga reseller. Stok melimpah, harga grosir terbaik, kirim tepat waktu.
                             </p>
                         </div>
@@ -315,22 +319,31 @@ const LandingPage = () => {
                             </a>
                             <div className="flex -space-x-3 items-center ml-2">
                                 {[1,2,3,4].map(i => (
-                                    <img key={i} src={`https://i.pravatar.cc/100?u=${i}`} className="w-10 h-10 rounded-full border-4 border-white" alt="partner" />
+                                    <img key={i} src={`https://i.pravatar.cc/100?u=${i}`} className="w-10 h-10 rounded-full border-4 border-white" alt={`Partner Reseller ${i}`} loading="lazy" width="40" height="40" />
                                 ))}
-                                <span className="pl-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">DIPERCAYA 500+ RESELLER</span>
+                                <span className="pl-6 text-[10px] font-bold text-slate-600 uppercase tracking-widest">DIPERCAYA 500+ RESELLER</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="relative animate-in fade-in zoom-in-95 duration-700">
                         <div className="absolute inset-0 bg-blue-100 rounded-[4rem] rotate-3 -z-10 translate-x-4"></div>
-                        <img src={heroImage} className="w-full rounded-[4rem] shadow-2xl border-4 border-white-to-transparent" alt="Gudang Air Mineral" />
-                        <div className="absolute -bottom-6 -left-6 bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 animate-bounce duration-[3000ms]">
+                        <img 
+                            src={heroImage} 
+                            className="w-full rounded-[4rem] shadow-2xl border-4 border-white-to-transparent" 
+                            alt="Gudang Air Mineral"
+                            fetchPriority="high"
+                            loading="eager"
+                            decoding="async"
+                            width="800"
+                            height="600"
+                        />
+                        <div className="absolute -bottom-6 -left-6 bg-white p-8 rounded-[2rem] shadow-xl border border-slate-200 animate-bounce duration-[3000ms]">
                              <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black">15'</div>
                                 <div>
-                                    <p className="text-xs font-black uppercase tracking-widest">Pengiriman Cepat</p>
-                                    <p className="text-[10px] text-slate-400 font-medium">Area Cikande & Serang</p>
+                                    <p className="text-xs font-black uppercase tracking-widest text-slate-900">Pengiriman Cepat</p>
+                                    <p className="text-[10px] text-slate-600 font-medium">Area Subang</p>
                                 </div>
                              </div>
                         </div>
@@ -343,17 +356,17 @@ const LandingPage = () => {
                  <div className="max-w-7xl mx-auto px-6">
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
-                            { icon: <FaBox className="text-blue-600" />, title: "Stok Melimpah", desc: "Berbagai merk ternama (Aqua, Le Minerale, VIT) ready stock setiap hari." },
-                            { icon: <FaTruck className="text-sky-600" />, title: "Armada Sendiri", desc: "Pengiriman terjadwal dan gratis ongkir untuk area distributor tertentu." },
-                            { icon: <FaShieldAlt className="text-emerald-600" />, title: "Harga Distributor", desc: "Harga langsung dari tangan pertama, dijamin kompetitif untuk bisnis Anda." }
+                            { icon: <FaBox className="text-blue-700" />, title: "Stok Melimpah", desc: "Berbagai merk ternama (Aqua, Le Minerale, VIT) ready stock setiap hari." },
+                            { icon: <FaTruck className="text-sky-700" />, title: "Armada Sendiri", desc: "Pengiriman terjadwal dan gratis ongkir untuk area distributor tertentu." },
+                            { icon: <FaShieldAlt className="text-emerald-700" />, title: "Harga Distributor", desc: "Harga langsung dari tangan pertama, dijamin kompetitif untuk bisnis Anda." }
                         ].map((f, i) => (
                             <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-slate-200/50 shadow-sm flex items-start gap-6 hover:translate-y-[-4px] transition-all">
                                 <div className="p-4 bg-slate-50 rounded-2xl shrink-0 group-hover:scale-110 transition-transform">
                                     {f.icon}
                                 </div>
                                 <div>
-                                    <h4 className="font-black text-slate-800 uppercase tracking-tighter italic">{f.title}</h4>
-                                    <p className="text-slate-400 text-sm font-medium mt-1 leading-relaxed">{f.desc}</p>
+                                    <h2 className="font-black text-slate-800 uppercase tracking-tighter italic">{f.title}</h2>
+                                    <p className="text-slate-600 text-sm font-medium mt-1 leading-relaxed">{f.desc}</p>
                                 </div>
                             </div>
                         ))}
@@ -366,11 +379,11 @@ const LandingPage = () => {
                 <div className="flex flex-col md:flex-row justify-between items-end gap-6">
                     <div className="space-y-4">
                          <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em] italic">Katalog Barang</p>
-                         <h2 className="text-4xl font-black text-slate-800 tracking-tighter italic">Pilihan Produk <span className="text-slate-400 font-bold">Terbaik</span></h2>
+                         <h2 className="text-4xl font-black text-slate-800 tracking-tighter italic">Pilihan Produk <span className="text-slate-600 font-bold">Terbaik</span></h2>
                     </div>
                     
                     <div className="relative w-full md:w-96 group">
-                        <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600" />
+                        <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 transition-colors group-focus-within:text-blue-600" />
                         <input 
                             type="text" 
                             placeholder="Cari merk air mineral..." 
@@ -383,14 +396,17 @@ const LandingPage = () => {
 
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {filteredMenu.map(item => (
-                        <div key={item._id} className="bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden group hover:border-blue-200 transition-all flex flex-col">
+                        <div key={item._id} className="bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden group hover:border-blue-200 transition-all flex flex-col">
                             <div className="relative aspect-[4/5] overflow-hidden bg-slate-50">
                                 <img 
                                     src={item.image ? (item.image.startsWith('http') ? item.image : `${API_URL.replace('/api', '')}/${item.image}`) : `https://via.placeholder.com/400x500?text=${item.name}`} 
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                                     alt={item.name} 
+                                    loading="lazy"
+                                    width="400"
+                                    height="500"
                                 />
-                                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white/90 backdrop-blur-sm px-3 sm:px-4 py-1 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-slate-800 shadow-sm border border-slate-100">
+                                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white/95 backdrop-blur-sm px-3 sm:px-4 py-1 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-slate-900 shadow-sm border border-slate-200">
                                     {item.category || 'Air Mineral'}
                                 </div>
                             </div>
@@ -399,18 +415,18 @@ const LandingPage = () => {
                                     <h3 className="font-black text-slate-800 text-xs sm:text-lg uppercase leading-tight tracking-tighter line-clamp-2 min-h-[1.5em] sm:min-h-0 italic">{item.name}</h3>
                                     {item.variants && item.variants.length > 0 && (
                                         <div className="mt-2">
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[8px] sm:text-[10px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm shadow-emerald-50 italic">
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[8px] sm:text-[10px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm shadow-emerald-50 italic">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
                                                 Spesifikasi: {item.variants[0]}
                                             </span>
                                         </div>
                                     )}
-                                    <p className="hidden sm:block text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2 italic">Estimasi Stok Terjamin</p>
+                                    <p className="hidden sm:block text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2 italic">Estimasi Stok Terjamin</p>
                                 </div>
                                 <div className="space-y-3 sm:space-y-4">
                                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline gap-0.5 sm:gap-0">
                                         <p className="text-sm sm:text-xl font-black text-blue-600 leading-none">Rp {item.price.toLocaleString()}</p>
-                                        <p className="text-[8px] sm:text-[9px] text-slate-300 font-bold uppercase tracking-tighter line-through decoration-red-100">Rp {(item.price * 1.2).toLocaleString()}</p>
+                                        <p className="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-tighter line-through decoration-red-300">Rp {(item.price * 1.2).toLocaleString()}</p>
                                     </div>
                                     
                                     {item.wholesalePrices && item.wholesalePrices.length > 0 && (
@@ -423,7 +439,7 @@ const LandingPage = () => {
                                                         <span>@ Rp {rule.price.toLocaleString()}</span>
                                                     </div>
                                                 ))}
-                                                {item.wholesalePrices.length > 1 && <p className="text-[7px] text-blue-400 text-center font-bold italic pt-0.5">Cek Detail...</p>}
+                                                {item.wholesalePrices.length > 1 && <p className="text-[7px] text-blue-700 text-center font-bold italic pt-0.5">Cek Detail...</p>}
                                             </div>
                                         </div>
                                     )}
@@ -450,9 +466,9 @@ const LandingPage = () => {
                                 <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em] italic">Siapa Kami?</p>
                                 <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-tight">Pd. Amanah Lintang: Solusi Logistik Air Mineral Anda</h2>
                             </div>
-                            <div className="space-y-6 text-slate-400 font-medium text-lg leading-relaxed italic">
+                             <div className="space-y-6 text-slate-600 font-medium text-lg leading-relaxed italic">
                                 <p>
-                                    Berawal dari dedikasi untuk menyediakan akses air bersih berkualitas, Pd. Amanah Lintang kini telah berkembang menjadi salah satu distributor air mineral terkemuka di kawasan Cikande dan sekitarnya. 
+                                    Berawal dari dedikasi untuk menyediakan akses air bersih berkualitas, Pd. Amanah Lintang kini telah berkembang menjadi salah satu distributor air mineral terkemuka di daerah subang dan sekitarnya. 
                                 </p>
                                 <p>
                                     Kami memahami bahwa kelancaran stok adalah nafas bisnis Anda. Oleh karena itu, kami membangun infrastruktur logistik yang kuat, memastikan setiap reseller mendapatkan produk orisinal dengan harga tangan pertama yang kompetitif.
@@ -461,18 +477,25 @@ const LandingPage = () => {
                             <div className="grid grid-cols-2 gap-8 pt-4">
                                 <div className="space-y-1">
                                     <p className="text-3xl font-black text-slate-900 italic">2015</p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Berdiri Sejak</p>
+                                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Berdiri Sejak</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-3xl font-black text-slate-900 italic">10k+</p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Galon/Hari</p>
+                                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Galon/Hari</p>
                                 </div>
                             </div>
                         </div>
                         <div className="relative group animate-in fade-in slide-in-from-right-8 duration-700">
                             <div className="absolute -inset-4 bg-slate-50 rounded-[4rem] -z-10 group-hover:rotate-1 transition-transform"></div>
                             <div className="aspect-video bg-slate-100 rounded-[3rem] shadow-2xl border-2 border-white overflow-hidden relative">
-                                <img src="https://images.unsplash.com/photo-1544333346-64673638bb3c?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" alt="Tentang Kami" />
+                                <img 
+                                    src="https://images.unsplash.com/photo-1544333346-64673638bb3c?auto=format&fit=crop&q=80&w=800" 
+                                    className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" 
+                                    alt="Tentang Kami" 
+                                    loading="lazy"
+                                    width="800"
+                                    height="450"
+                                />
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
                                 <div className="absolute bottom-8 left-8 p-6 bg-white/90 backdrop-blur-md rounded-2xl border border-white max-w-xs">
                                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic">Core Mission</p>
@@ -484,6 +507,59 @@ const LandingPage = () => {
                 </div>
             </section>
 
+            {/* Visi & Misi Section */}
+            <section id="vision" className="py-32 bg-white">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="grid lg:grid-cols-2 gap-20">
+                        {/* Visi */}
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                            <div className="space-y-4">
+                                <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em] italic">Masa Depan Kami</p>
+                                <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-tight uppercase">Visi Kami</h2>
+                            </div>
+                            <div className="p-10 bg-blue-50 rounded-[3rem] border border-blue-100 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-8 text-blue-100 group-hover:text-blue-200 transition-colors">
+                                    <FaTint size={120} />
+                                </div>
+                                <p className="text-2xl font-black text-blue-900 italic leading-relaxed relative z-10">
+                                    "Menjadi usaha distribusi air mineral yang terpercaya dan profesional dalam
+menyediakan produk berkualitas serta pelayanan distribusi yang tepat waktu kepada
+agen dan toko."
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Misi */}
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+                            <div className="space-y-4">
+                                <p className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em] italic">Langkah Nyata</p>
+                                <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-tight uppercase">Misi Kami</h2>
+                            </div>
+                            <div className="space-y-4">
+                                {[
+                                    { title: "Produk Berkualitas", desc: "Menyediakan produk air mineral yang aman dan berkualitas sesuai dengan kebutuhan pelanggan." },
+                                    { title: "Distribusi Efisien", desc: "Melaksanakan proses distribusi barang secara tepat waktu dan efisien." },
+                                    { title: "Pelayanan Profesional", desc: "Memberikan pelayanan yang baik dan profesional kepada agen, toko, serta pihak terkait." },
+                                    { title: "Kemitraan Strategis", desc: "Menjalin kerja sama yang baik dengan agen, toko, dan pihak terkait dalam kegiatan distribusi." }
+                                ].map((misi, i) => (
+                                    <div key={i} className="flex gap-6 p-6 rounded-3xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
+                                        <div className="w-12 h-12 bg-white shadow-sm border border-slate-100 rounded-2xl flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-110 transition-transform">
+                                            <FaCheckCircle size={20} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <h3 className="font-black text-slate-800 uppercase italic tracking-tighter">{misi.title}</h3>
+                                            <p className="text-slate-500 text-sm font-medium leading-relaxed italic">{misi.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            </main>
+
             {/* Footer Modern Clean */}
             <footer id="contact" className="bg-slate-900 py-32">
                 <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-16">
@@ -494,13 +570,17 @@ const LandingPage = () => {
                             </div>
                             <span className="text-2xl font-black text-white italic tracking-tighter">Pd. Amanah Lintang</span>
                         </div>
-                        <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-sm italic">
+                        <p className="text-slate-200 text-lg font-medium leading-relaxed max-w-sm italic">
                             Mitra terpercaya distribusi air mineral kemasan sejak 2015. Komitmen pada kualitas stok dan ketepatan waktu pengiriman.
                         </p>
                         <div className="flex gap-6">
-                            {[FaWhatsapp, FaMapMarkerAlt, FaPhoneAlt].map((Icon, i) => (
-                                <a key={i} href="#" className="w-12 h-12 bg-white/5 text-white rounded-2xl flex items-center justify-center hover:bg-blue-600 transition-all border border-white/10">
-                                    <Icon size={20} />
+                            {[
+                                { Icon: FaWhatsapp, link: "https://wa.me/6281320402004", label: "Hubungi via WhatsApp" },
+                                { Icon: FaMapMarkerAlt, link: "https://maps.app.goo.gl/1nYUzLpyULRWHwiU7", label: "Lihat Lokasi di Google Maps" },
+                                { Icon: FaPhoneAlt, link: "tel:081320402004", label: "Hubungi via Telepon" }
+                            ].map((item, i) => (
+                                <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-white/5 text-white rounded-2xl flex items-center justify-center hover:bg-blue-600 transition-all border border-white/10" aria-label={item.label}>
+                                    <item.Icon size={20} />
                                 </a>
                             ))}
                         </div>
@@ -508,7 +588,7 @@ const LandingPage = () => {
                     
                     <div className="space-y-8">
                         <h4 className="text-white font-black uppercase tracking-widest text-xs italic">Akses Cepat</h4>
-                        <ul className="space-y-4 text-slate-400 text-sm font-bold">
+                        <ul className="space-y-4 text-slate-300 text-sm font-bold">
                             <li><a href="#" className="hover:text-blue-400 transition-colors">Daftar Menjadi Reseller</a></li>
                             <li><a href="#" className="hover:text-blue-400 transition-colors">Cara Pemesanan Grosir</a></li>
                             <li><a href="#" className="hover:text-blue-400 transition-colors">Cek Status Pesanan</a></li>
@@ -518,16 +598,16 @@ const LandingPage = () => {
 
                     <div className="space-y-8">
                         <h4 className="text-white font-black uppercase tracking-widest text-xs italic">Lokasi Hub</h4>
-                        <div className="text-slate-400 text-sm font-bold space-y-4">
-                            <div className="flex gap-3">
+                        <div className="text-slate-300 text-sm font-bold space-y-4 ">
+                            <div className="flex gap-3 hover:text-blue-400 transition-colors">
                                 <FaMapMarkerAlt className="text-blue-600 shrink-0" />
-                                <p className="italic">Kawasan Industri Cikande, Serang, Banten</p>
+                                <a href='https://maps.app.goo.gl/1nYUzLpyULRWHwiU7' className="italic">Jl. Desa Ciasem Tengah, Ciasem Tengah, Kec. Ciasem, Kabupaten Subang, Jawa Barat 41256</a>
                             </div>
                             <div className="flex gap-3">
                                 <FaPhoneAlt className="text-blue-600 shrink-0" />
-                                <p>(021) 1234-5678</p>
+                                <p>0813-2040-2004</p>
                             </div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-white/20 pt-4">© 2024 PD AMANAH LINTANG</p>
+                             <p className="text-[10px] font-black uppercase tracking-widest text-white/70 pt-4">© {new Date().getFullYear()} PD AMANAH LINTANG</p>
                         </div>
                     </div>
                 </div>
@@ -543,7 +623,7 @@ const LandingPage = () => {
                                 <h3 className="text-xl font-black text-slate-800 uppercase italic">Keranjang Belanja</h3>
                                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{cart.length} Jenis Barang</p>
                             </div>
-                            <button onClick={() => setIsCartOpen(false)} className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-800 transition-all font-bold">×</button>
+                             <button onClick={() => setIsCartOpen(false)} className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-800 transition-all font-bold" aria-label="Close Shopping Cart">×</button>
                         </div>
 
                         <div className="flex-grow overflow-y-auto p-8 space-y-6">
@@ -581,6 +661,9 @@ const LandingPage = () => {
                                                     src={item.product.image ? (item.product.image.startsWith('http') ? item.product.image : `${API_URL.replace('/api', '')}/${item.product.image}`) : `https://via.placeholder.com/100?text=${item.product.name}`} 
                                                     className="w-full h-full object-cover" 
                                                     alt={item.product.name}
+                                                    loading="lazy"
+                                                    width="80"
+                                                    height="80"
                                                 />
                                             </div>
                                             <div className="flex-grow">
@@ -606,9 +689,9 @@ const LandingPage = () => {
                                                 </div>
 
                                                 <div className="flex items-center bg-slate-50 rounded-xl border border-slate-100 p-1 w-fit mt-3">
-                                                    <button onClick={() => updateQuantity(item.product._id, -1, item.variantName)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors"><FaMinus size={10} /></button>
+                                                    <button onClick={() => updateQuantity(item.product._id, -1, item.variantName)} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-blue-600 transition-colors" aria-label="Decrease Quantity"><FaMinus size={10} /></button>
                                                     <span className="w-8 text-center text-xs font-black">{item.quantity}</span>
-                                                    <button onClick={() => updateQuantity(item.product._id, 1, item.variantName)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors"><FaPlus size={10} /></button>
+                                                    <button onClick={() => updateQuantity(item.product._id, 1, item.variantName)} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-blue-600 transition-colors" aria-label="Increase Quantity"><FaPlus size={10} /></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -647,7 +730,7 @@ const LandingPage = () => {
                                 <h3 className="text-xl sm:text-3xl font-black text-slate-800 tracking-tighter italic leading-none uppercase">Informasi Pengiriman</h3>
                                 <p className="text-[10px] sm:text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest italic">Lengkapi data untuk proses pengiriman</p>
                             </div>
-                            <button onClick={() => setIsCheckoutOpen(false)} className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-800 transition-all text-xl font-bold italic shrink-0">×</button>
+                            <button onClick={() => setIsCheckoutOpen(false)} className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-all text-xl font-bold italic shrink-0" aria-label="Close Checkout">×</button>
                         </div>
 
                         <form onSubmit={handleCheckout} className="p-6 sm:p-10 space-y-6 sm:space-y-8 overflow-y-auto custom-scrollbar">
@@ -788,7 +871,7 @@ const LandingPage = () => {
                                 <h3 className="text-2xl font-black text-slate-800 tracking-tighter italic leading-none">Riwayat Pesanan</h3>
                                 <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest italic">Tersimpan di Browser Anda</p>
                             </div>
-                            <button onClick={() => setIsHistoryOpen(false)} className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-800 transition-all font-bold">
+                            <button onClick={() => setIsHistoryOpen(false)} className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-all font-bold" aria-label="Close History">
                                 <FaTimes />
                             </button>
                         </div>
@@ -888,7 +971,8 @@ const LandingPage = () => {
                                     setIsStatusModalOpen(false);
                                     window.history.replaceState({}, '', '/');
                                 }}
-                                className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-800 transition-all font-bold"
+                                className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-all font-bold"
+                                aria-label="Close Status"
                             >
                                 <FaTimes />
                             </button>
@@ -1028,7 +1112,7 @@ const LandingPage = () => {
                                     <h3 className="text-3xl font-black text-slate-800 tracking-tighter italic leading-none">Lacak Pesanan</h3>
                                     <p className="text-slate-400 text-xs font-medium italic">Masukkan ID Pesanan Anda untuk melihat status terbaru.</p>
                                 </div>
-                                <button onClick={() => setIsSearchModalOpen(false)} className="w-12 h-12 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-2xl flex items-center justify-center transition-all">
+                                <button onClick={() => setIsSearchModalOpen(false)} className="w-12 h-12 bg-slate-50 text-slate-500 hover:text-blue-600 rounded-2xl flex items-center justify-center transition-all" aria-label="Close Search">
                                     <FaTimes size={14} />
                                 </button>
                             </div>
