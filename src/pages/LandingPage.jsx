@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Link, useNavigate } from 'react-router-dom';
 import heroImage from '../assets/hero-image.webp';
+import logo from '../assets/logo.jpg';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -335,8 +336,8 @@ const LandingPage = () => {
                             fetchPriority="high"
                             loading="eager"
                             decoding="async"
-                            width="800"
-                            height="600"
+                            width="1280"
+                            height="1280"
                         />
                         <div className="absolute -bottom-6 -left-6 bg-white p-8 rounded-[2rem] shadow-xl border border-slate-200 animate-bounce duration-[3000ms]">
                              <div className="flex items-center gap-4">
@@ -487,20 +488,15 @@ const LandingPage = () => {
                         </div>
                         <div className="relative group animate-in fade-in slide-in-from-right-8 duration-700">
                             <div className="absolute -inset-4 bg-slate-50 rounded-[4rem] -z-10 group-hover:rotate-1 transition-transform"></div>
-                            <div className="aspect-video bg-slate-100 rounded-[3rem] shadow-2xl border-2 border-white overflow-hidden relative">
+                            <div className="aspect-square bg-slate-100 rounded-[3rem] shadow-2xl border-2 border-white overflow-hidden relative">
                                 <img 
-                                    src="https://images.unsplash.com/photo-1544333346-64673638bb3c?auto=format&fit=crop&q=80&w=800" 
-                                    className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" 
+                                    src={logo} 
+                                    className="w-full h-full object-contain grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" 
                                     alt="Tentang Kami" 
                                     loading="lazy"
-                                    width="800"
-                                    height="450"
+                                    width="328"
+                                    height="328"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
-                                <div className="absolute bottom-8 left-8 p-6 bg-white/90 backdrop-blur-md rounded-2xl border border-white max-w-xs">
-                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic">Core Mission</p>
-                                     <p className="font-bold text-slate-800 text-sm mt-1">"Menyediakan hidrasi berkualitas untuk Indonesia."</p>
-                                </div>
                             </div>
                         </div>
                     </div>
