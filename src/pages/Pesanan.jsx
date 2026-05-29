@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaCheck, FaTimes, FaSpinner, FaBoxOpen, FaUser, FaPhoneAlt, FaMapMarkerAlt, FaCalendar, FaWhatsapp } from 'react-icons/fa';
+import { FaCheck, FaTimes, FaSpinner, FaBoxOpen, FaUser, FaPhoneAlt, FaMapMarkerAlt, FaCalendar, FaClock, FaWhatsapp } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
+
+const formatDateTime = (dateString) => {
+    if (!dateString) return { date: '-', time: '-' };
+    const d = new Date(dateString);
+    const date = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    const time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return { date, time };
+};
 
 const Pesanan = () => {
     const [orders, setOrders] = useState([]);
@@ -174,6 +182,16 @@ const Pesanan = () => {
                                         {order.status}
                                     </span>
                                     <p className="text-sm font-black text-gray-800 uppercase tracking-tighter italic">{order.orderNumber}</p>
+                                    <div className="flex items-center gap-3 pt-0.5">
+                                        <span className="flex items-center gap-1.5 text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                                            <FaCalendar size={9} className="text-blue-400" />
+                                            {formatDateTime(order.createdAt).date}
+                                        </span>
+                                        <span className="flex items-center gap-1.5 text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                                            <FaClock size={9} className="text-blue-400" />
+                                            {formatDateTime(order.createdAt).time} WIB
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="text-right flex flex-col items-end gap-1">
                                     <div className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest italic ${order.paymentMethod === 'cod' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>

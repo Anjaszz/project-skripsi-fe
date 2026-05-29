@@ -752,8 +752,13 @@ agen dan toko."
                                         <input 
                                             required
                                             type="tel" 
+                                            inputMode="numeric"
+                                            maxLength={15}
                                             value={guestInfo.phone}
-                                            onChange={(e) => setGuestInfo({...guestInfo, phone: e.target.value})}
+                                            onChange={(e) => {
+                                                const onlyDigits = e.target.value.replace(/\D/g, '');
+                                                setGuestInfo({...guestInfo, phone: onlyDigits});
+                                            }}
                                             className="w-full pl-14 pr-8 py-5 bg-slate-50 border-0 rounded-[1.5rem] outline-none ring-2 ring-transparent focus:ring-blue-600 focus:bg-white transition-all font-bold text-sm tracking-widest"
                                             placeholder="08xxxxxxxxxx"
                                         />
