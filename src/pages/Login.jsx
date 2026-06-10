@@ -129,12 +129,13 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Username</label>
+              <label htmlFor="username" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Username</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-600 transition-colors">
                   <FaUser size={14} />
                 </div>
                 <input
+                  id="username"
                   type="text"
                   value={username}
                   onChange={handleUsernameChange}
@@ -148,12 +149,13 @@ const Login = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Kata Sandi</label>
+              <label htmlFor="password" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1 italic">Kata Sandi</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-600 transition-colors">
                   <FaLock size={14} />
                 </div>
                 <input
+                  id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={handlePasswordChange}
@@ -165,9 +167,10 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-6 flex items-center text-slate-300 hover:text-slate-600 transition-colors"
+                  aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                  className="absolute inset-y-0 right-0 pr-6 flex items-center text-slate-500 hover:text-slate-700 transition-colors"
                 >
-                  {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                  {showPassword ? <FaEyeSlash size={16} aria-hidden="true" /> : <FaEye size={16} aria-hidden="true" />}
                 </button>
               </div>
               {validationErrors.password && <p className="text-[9px] text-red-500 font-black uppercase tracking-widest ml-1 italic">{validationErrors.password}</p>}
@@ -192,7 +195,7 @@ const Login = () => {
             </button>
           </form>
 
-          <p className="text-center text-[10px] text-slate-300 font-black uppercase tracking-[0.2em] mt-10 italic">
+          <p className="text-center text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-10 italic">
             © 2026 Amanah Lintang Hub — v2.0
           </p>
         </div>
