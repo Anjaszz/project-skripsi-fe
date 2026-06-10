@@ -40,14 +40,6 @@ const Dashboard = () => {
     }).format(amount);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="spinner"></div>
-      </div>
-    );
-  }
-
   const stats = [
     {
       title: 'Penjualan Hari Ini',
@@ -89,7 +81,21 @@ const Dashboard = () => {
       
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {stats.map((stat, index) => {
+        {loading ? (
+          [0,1,2].map(i => (
+            <div key={i} className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-200 animate-pulse">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2 flex-1">
+                  <div className="h-2.5 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-5 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-2 bg-gray-200 rounded w-2/3"></div>
+                </div>
+                <div className="w-11 h-11 bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+          ))
+        ) : (
+          stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <div key={index} className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-200">
@@ -108,8 +114,9 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -117,7 +124,15 @@ const Dashboard = () => {
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-200">
           <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4 md:mb-6">Tren Penjualan Mingguan</h2>
           <div className="h-[300px] md:h-[350px]">
-            {salesData.length > 0 ? (
+            {loading ? (
+              <div className="h-full flex flex-col justify-end gap-2 animate-pulse">
+                <div className="flex items-end gap-3 h-full px-2">
+                  {[60,85,45,90,55,70,40].map((h, i) => (
+                    <div key={i} className="flex-1 bg-gray-200 rounded-t-md" style={{ height: `${h}%` }}></div>
+                  ))}
+                </div>
+              </div>
+            ) : salesData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={salesData.slice(-7)}>
                   <defs>
@@ -196,6 +211,26 @@ const Dashboard = () => {
         {/* Inventory Summary */}
         <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-200">
             <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4 md:mb-6">Inventory Status</h2>
+            {loading ? (
+              <div className="space-y-6 animate-pulse">
+                {[0,1].map(i => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                      <div className="h-3 bg-gray-200 rounded w-24"></div>
+                    </div>
+                    <div className="h-4 bg-gray-200 rounded w-16"></div>
+                  </div>
+                ))}
+                <div className="pt-4 border-t space-y-2">
+                  <div className="flex justify-between">
+                    <div className="h-3 bg-gray-200 rounded w-24"></div>
+                    <div className="h-3 bg-gray-200 rounded w-16"></div>
+                  </div>
+                  <div className="w-full bg-gray-100 h-2 rounded-full"></div>
+                </div>
+              </div>
+            ) : (
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -224,6 +259,7 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
+            )}
         </div>
       </div>
     </div>
