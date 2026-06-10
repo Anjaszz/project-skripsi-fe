@@ -247,7 +247,7 @@ const Kasir = () => {
             </div>
             <div className="p-4 max-h-[400px] overflow-y-auto space-y-4">
                 {cart.length === 0 ? (
-                    <p className="text-center text-gray-400 py-8">Keranjang kosong</p>
+                    <p className="text-center text-gray-600 py-8">Keranjang kosong</p>
                 ) : (
                     cart.map(item => (
                         <div key={item.product._id} className="flex justify-between items-center text-sm border-b pb-4 last:border-0 last:pb-0">
@@ -265,7 +265,7 @@ const Kasir = () => {
                                         <button onClick={() => updateCart(item.product._id, (Number(item.quantity) || 0) + 1, item.sellingPrice)} className="text-gray-400 hover:text-blue-500"><FaPlus size={10} /></button>
                                     </div>
                                     <div className="relative">
-                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold">Rp</span>
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 font-bold">Rp</span>
                                         <input 
                                             type="text" 
                                             value={formatInputNumber(item.sellingPrice)}
@@ -278,7 +278,7 @@ const Kasir = () => {
                             <div className="text-right flex flex-col justify-between h-full min-h-[60px]">
                                 <button onClick={() => removeFromCart(item.product._id)} className="text-red-400 hover:text-red-600 self-end"><FaTrash size={12} /></button>
                                 <div>
-                                    <p className="text-[9px] text-gray-400 uppercase font-bold">Subtotal</p>
+                                    <p className="text-[9px] text-gray-600 uppercase font-bold">Subtotal</p>
                                     <p className="font-black text-gray-800">{formatCurrency((Number(item.quantity) || 0) * (Number(item.sellingPrice) || 0))}</p>
                                 </div>
                             </div>

@@ -33,7 +33,7 @@ const Layout = () => {
             <h2 className="text-base md:text-xl font-bold text-gray-800">Point of Sale</h2>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-[10px] md:text-xs text-green-500 font-bold flex items-center gap-1.5 bg-green-50 px-3 py-1 rounded-full border border-green-100">
+            <span className="text-[10px] md:text-xs text-green-700 font-bold flex items-center gap-1.5 bg-green-50 px-3 py-1 rounded-full border border-green-200">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               <span className="hidden sm:inline">SERVER</span> ONLINE
             </span>
