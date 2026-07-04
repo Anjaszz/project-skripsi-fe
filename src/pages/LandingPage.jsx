@@ -227,7 +227,7 @@ const LandingPage = () => {
                             <FaTint size={22} />
                         </div>
                         <div className="flex flex-col -space-y-1">
-                             <span className="text-xl font-black italic tracking-tighter">Pd. Amanah</span>
+                             <span className="text-xl font-black italic tracking-tighter">Pd. Amanah Lintang</span>
                              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest leading-none">Distributor Hub</span>
                         </div>
                     </Link>
