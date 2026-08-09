@@ -139,6 +139,7 @@ const LandingPage = () => {
         e.preventDefault();
         if (cart.length === 0) return;
         
+        const currentTotal = getTotal();
         try {
             const token = localStorage.getItem('token');
             const res = await axios.post(`${API_URL}/orders`, {
@@ -150,13 +151,13 @@ const LandingPage = () => {
                 })),
                 guestInfo: guestInfo,
                 paymentMethod: selectedPaymentMethod,
-                total: getTotal()
+                total: currentTotal
             }, {
               headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
 
             if (res.data.success) {
-                const { token, orderNumber } = res.data.data;
+                const { token, orderNumber, redirect_url } = res.data.data;
                 setIsCheckoutOpen(false);
                 setCart([]);
 
@@ -165,7 +166,7 @@ const LandingPage = () => {
                     const existingHistory = JSON.parse(localStorage.getItem('guest_orders') || '[]');
                     const newEntry = {
                         orderNumber: orderNumber,
-                        total: getTotal(),
+                        total: currentTotal,
                         createdAt: new Date().toISOString(),
                         status: 'pesanan masuk',
                         paymentMethod: selectedPaymentMethod
@@ -174,24 +175,41 @@ const LandingPage = () => {
                     loadGuestHistory();
                 }
                 
-                if (selectedPaymentMethod === 'midtrans' && token) {
-                    window.snap.pay(token, {
-                        onSuccess: () => {
-                            toast.success('Pembayaran Berhasil!');
-                            handleCheckStatus(orderNumber);
-                        },
-                        onClose: () => {
-                            toast.warning('Segera selesaikan pembayaran Anda');
-                            handleCheckStatus(orderNumber);
-                        },
-                    });
+                if (selectedPaymentMethod === 'midtrans') {
+                    if (window.snap && typeof window.snap.pay === 'function' && token) {
+                        window.snap.pay(token, {
+                            onSuccess: () => {
+                                toast.success('Pembayaran Berhasil!');
+                                handleCheckStatus(orderNumber);
+                            },
+                            onPending: () => {
+                                toast.warning('Segera selesaikan pembayaran Anda');
+                                handleCheckStatus(orderNumber);
+                            },
+                            onError: () => {
+                                toast.error('Pembayaran gagal');
+                                handleCheckStatus(orderNumber);
+                            },
+                            onClose: () => {
+                                toast.warning('Segera selesaikan pembayaran Anda');
+                                handleCheckStatus(orderNumber);
+                            },
+                        });
+                    } else if (redirect_url) {
+                        toast.info('Mengarahkan ke pembayaran Midtrans...');
+                        window.location.href = redirect_url;
+                    } else {
+                        toast.success('Pesanan berhasil dibuat!');
+                        handleCheckStatus(orderNumber);
+                    }
                 } else {
                     toast.success('Pesanan berhasil dibuat (COD)!');
                     handleCheckStatus(orderNumber);
                 }
             }
         } catch (error) {
-            toast.error('Gagal memproses pesanan');
+            console.error('Checkout Error:', error);
+            toast.error(error.response?.data?.message || 'Gagal memproses pesanan');
         }
     };
 
@@ -1045,13 +1063,17 @@ agen dan toko."
                                         {selectedOrder.paymentStatus === 'pending' && selectedOrder.midtransToken && (new Date().getTime() - new Date(selectedOrder.createdAt).getTime() < 15 * 60 * 1000) && (
                                             <button 
                                                 onClick={() => {
-                                                    window.snap.pay(selectedOrder.midtransToken, {
-                                                        onSuccess: () => {
-                                                            toast.success('Pembayaran Berhasil!');
-                                                            handleCheckStatus(selectedOrder.orderNumber);
-                                                        },
-                                                        onClose: () => toast.warning('Segera selesaikan pembayaran Anda'),
-                                                    });
+                                                    if (window.snap && typeof window.snap.pay === 'function') {
+                                                        window.snap.pay(selectedOrder.midtransToken, {
+                                                            onSuccess: () => {
+                                                                toast.success('Pembayaran Berhasil!');
+                                                                handleCheckStatus(selectedOrder.orderNumber);
+                                                            },
+                                                            onClose: () => toast.warning('Segera selesaikan pembayaran Anda'),
+                                                        });
+                                                    } else {
+                                                        toast.info('Layanan Snap Midtrans belum siap. Silakan muat ulang halaman.');
+                                                    }
                                                 }}
                                                 className="mt-2 flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 animate-pulse italic"
                                             >

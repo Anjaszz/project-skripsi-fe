@@ -243,12 +243,19 @@ const CustomerDashboard = () => {
                             {order.paymentStatus === 'pending' && order.status !== 'dibatalkan' && (new Date().getTime() - new Date(order.createdAt).getTime() < 15 * 60 * 1000) && (
                                 <div className="px-6 pb-4 flex justify-end">
                                     <button 
-                                        onClick={() => window.snap.pay(order.midtransToken, {
-                                            onSuccess: () => {
-                                                toast.success('Pembayaran Berhasil!');
-                                                fetchOrders();
+                                        onClick={() => {
+                                            if (window.snap && typeof window.snap.pay === 'function') {
+                                                window.snap.pay(order.midtransToken, {
+                                                    onSuccess: () => {
+                                                        toast.success('Pembayaran Berhasil!');
+                                                        fetchOrders();
+                                                    },
+                                                    onClose: () => toast.warning('Segera selesaikan pembayaran Anda')
+                                                });
+                                            } else {
+                                                toast.info('Layanan Snap Midtrans belum siap. Silakan muat ulang halaman.');
                                             }
-                                        })}
+                                        }}
                                         className="bg-blue-600 text-white px-8 py-2 rounded-xl text-xs font-bold hover:bg-slate-900 transition-all"
                                     >
                                         Bayar Sekarang
