@@ -14,6 +14,7 @@ import LandingPage from './pages/LandingPage';
 import Pesanan from './pages/Pesanan';
 import CustomerAuth from './pages/CustomerAuth';
 import DaftarPelanggan from './pages/DaftarPelanggan';
+import StockHistory from './pages/StockHistory';
 import CustomerDashboard from './pages/CustomerDashboard';
 import AdminPaymentSettings from './pages/AdminPaymentSettings';
 
@@ -44,6 +45,7 @@ function App() {
               <Route path="variants" element={<Variants />} />
               <Route path="produk" element={<Produk />} />
               <Route path="inventory" element={<Inventory />} />
+              <Route path="stock-history" element={<PrivateRoute requiredRole={['admin', 'developer']}><StockHistory /></PrivateRoute>} />
               <Route path="customers" element={<PrivateRoute requiredRole={['admin', 'developer']}><DaftarPelanggan /></PrivateRoute>} />
               <Route path="kasir" element={<Kasir />} />
               <Route path="laporan" element={<PrivateRoute requiredRole="admin"><Laporan /></PrivateRoute>} />

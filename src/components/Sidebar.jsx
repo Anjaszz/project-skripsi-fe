@@ -30,6 +30,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const menuItems = [
     ...(isAdmin ? [{ path: '/dashboard', label: 'Dashboard', icon: FaChartLine }] : []),
     { path: '/inventory', label: 'Inventory', icon: FaBox },
+    ...(isAdmin ? [{ path: '/stock-history', label: 'Riwayat Stok', icon: FaHistory }] : []),
     { path: '/variants', label: 'Variant', icon: FaTags },
     ...(isAdmin ? [{ path: '/laporan', label: 'Laporan', icon: FaFileAlt }] : []),
     { path: '/kasir', label: 'Kasir', icon: FaCashRegister },

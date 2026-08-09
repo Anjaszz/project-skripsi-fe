@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { inventoryAPI, variantAPI } from '../services/api';
-import { FaPlus, FaEdit, FaTrash, FaHistory } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaHistory, FaSearch, FaSpinner } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
+import Pagination from '../components/Pagination';
 
 const Inventory = () => {
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [displayLimit, setDisplayLimit] = useState(15);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -53,6 +57,9 @@ const Inventory = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSaving) return;
+
+    setIsSaving(true);
     try {
       if (editingId) {
         await inventoryAPI.update(editingId, {
@@ -64,12 +71,15 @@ const Inventory = () => {
         await inventoryAPI.create(formData);
         toast.success('Produk berhasil ditambahkan');
       }
+      await new Promise(r => setTimeout(r, 450));
       setShowModal(false);
       resetForm();
       fetchProducts();
     } catch (error) {
       console.error('Error:', error);
       toast.error(error.response?.data?.message || 'Gagal menyimpan produk');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -85,19 +95,28 @@ const Inventory = () => {
     setShowModal(true);
   };
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const handleDelete = (id) => {
     setDeleteId(id);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
     try {
       await inventoryAPI.delete(deleteId);
-      toast.success('Produk berhasil dihapus');
+      toast.success('Barang berhasil dihapus');
+      await new Promise(r => setTimeout(r, 450));
       fetchProducts();
+      setShowDeleteModal(false);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Gagal menghapus produk');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -120,9 +139,12 @@ const Inventory = () => {
     }).format(amount);
   };
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-full"><div className="spinner"></div></div>;
-  }
+  const filteredProducts = products.filter(p => 
+    (p.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (p.variantName?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+  );
+
+  const paginatedProducts = filteredProducts.slice(0, displayLimit);
 
   return (
     <div className="space-y-6">
@@ -146,6 +168,23 @@ const Inventory = () => {
         )}
       </div>
 
+      {/* Global Search */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="relative">
+          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Cari barang atau varian..."
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setDisplayLimit(15);
+            }}
+          />
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg shadow-sm border overflow-x-auto">
         <table className="w-full text-left">
           <thead className="bg-gray-50 border-b">
@@ -159,30 +198,51 @@ const Inventory = () => {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {products.map((product) => (
-              <tr key={product._id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 font-medium text-gray-800">{product.name}</td>
-                <td className="px-6 py-4">{product.variantName || '-'}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${product.stock < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                    {product.stock}
-                  </span>
-                </td>
-                {isAdmin && <td className="px-6 py-4 text-right text-sm text-gray-600 font-medium">{formatCurrency(product.purchasePrice)}</td>}
-                {isAdmin && <td className="px-6 py-4 text-right font-bold text-gray-800">{formatCurrency(product.stock * product.purchasePrice)}</td>}
-                {isAdmin && (
+            {loading ? (
+              [1, 2, 3, 4, 5].map(i => (
+                <tr key={i} className="animate-pulse">
+                  <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-3/4"></div></td>
+                  <td className="px-6 py-4"><div className="h-4 bg-slate-150 rounded w-1/2"></div></td>
+                  <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-12"></div></td>
+                  {isAdmin && <td className="px-6 py-4"><div className="h-4 bg-slate-150 rounded w-24 ml-auto"></div></td>}
+                  {isAdmin && <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-28 ml-auto"></div></td>}
+                  {isAdmin && <td className="px-6 py-4"><div className="h-6 bg-slate-150 rounded w-16 mx-auto"></div></td>}
+                </tr>
+              ))
+            ) : filteredProducts.length === 0 ? (
+                <tr><td colSpan={isAdmin ? "6" : "3"} className="px-6 py-12 text-center text-gray-400 font-medium">Belum ada data barang</td></tr>
+            ) : (
+              paginatedProducts.map((product) => (
+                <tr key={product._id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-gray-800">{product.name}</td>
+                  <td className="px-6 py-4">{product.variantName || '-'}</td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => handleEdit(product)} className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg shadow-sm border"><FaEdit /></button>
-                        <button onClick={() => handleDelete(product._id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg shadow-sm border"><FaTrash /></button>
-                    </div>
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${product.stock < 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                      {product.stock}
+                    </span>
                   </td>
-                )}
-              </tr>
-            ))}
+                  {isAdmin && <td className="px-6 py-4 text-right text-sm text-gray-600 font-medium">{formatCurrency(product.purchasePrice)}</td>}
+                  {isAdmin && <td className="px-6 py-4 text-right font-bold text-gray-800">{formatCurrency(product.stock * product.purchasePrice)}</td>}
+                  {isAdmin && (
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                          <button onClick={() => handleEdit(product)} className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg shadow-sm border"><FaEdit /></button>
+                          <button onClick={() => handleDelete(product._id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg shadow-sm border"><FaTrash /></button>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        displayLimit={displayLimit}
+        totalItems={filteredProducts.length}
+        onLoadMore={() => setDisplayLimit(prev => prev + 15)}
+      />
 
       {/* Modal Form */}
       {showModal && (
@@ -251,8 +311,17 @@ const Inventory = () => {
                 </>
               )}
               <div className="flex gap-2 pt-4">
-                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 bg-gray-100 py-2 rounded-lg font-bold">Batal</button>
-                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold">Simpan</button>
+                <button type="button" disabled={isSaving} onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 bg-gray-100 py-2 rounded-lg font-bold disabled:opacity-50">Batal</button>
+                <button type="submit" disabled={isSaving} className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  {isSaving ? (
+                    <>
+                      <FaSpinner className="animate-spin" size={14} />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <span>{editingId ? 'Update' : 'Simpan'}</span>
+                  )}
+                </button>
               </div>
             </form>
           </div>
@@ -261,13 +330,14 @@ const Inventory = () => {
 
       <ConfirmModal
         isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+        onClose={() => !isDeleting && setShowDeleteModal(false)}
         onConfirm={confirmDelete}
         title="Hapus Barang"
         message="Yakin ingin menghapus barang ini?"
         confirmText="Hapus"
         cancelText="Batal"
         type="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

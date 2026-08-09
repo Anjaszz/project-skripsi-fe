@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { menuAPI, kasirAPI, inventoryAPI } from '../services/api';
-import { FaPlus, FaMinus, FaTrash, FaShoppingCart, FaReceipt, FaPrint, FaSearch, FaTimes, FaImage } from 'react-icons/fa';
+import { FaPlus, FaMinus, FaTrash, FaShoppingCart, FaReceipt, FaPrint, FaSearch, FaTimes, FaImage, FaSpinner, FaCheckCircle } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 import { jsPDF } from 'jspdf';
 
@@ -8,6 +8,8 @@ const Kasir = () => {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastTransaction, setLastTransaction] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -121,9 +123,15 @@ const Kasir = () => {
     return cart.every(item => item.quantity > 0 && item.sellingPrice >= 0);
   };
 
-  const handleCheckout = async () => {
-    if (cart.length === 0) return;
+  const handleOpenCheckoutModal = () => {
+    if (!isCartValid()) return;
+    setShowConfirmModal(true);
+  };
 
+  const handleConfirmCheckout = async () => {
+    if (cart.length === 0 || isSubmitting) return;
+
+    setIsSubmitting(true);
     // The backend expects productId from Inventory model
     const items = cart.map(item => ({
       productId: item.product.inventory._id,
@@ -134,13 +142,17 @@ const Kasir = () => {
     try {
       const response = await kasirAPI.createTransaction({ items });
       setLastTransaction(response.data.data);
+      await new Promise(r => setTimeout(r, 450));
+      setShowConfirmModal(false);
       setShowReceipt(true);
       setCart([]);
       fetchProducts();
-      toast.success('Transaksi berhasil!');
+      toast.success('Transaksi Kasir Berhasil!');
     } catch (error) {
       console.error('Error:', error);
       toast.error('Gagal menyimpan transaksi');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -176,8 +188,6 @@ const Kasir = () => {
     window.open(doc.output('bloburl'), '_blank');
   };
 
-  if (loading) return <div className="flex justify-center py-20"><div className="spinner"></div></div>;
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -199,7 +209,20 @@ const Kasir = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProducts.map(product => (
+            {loading ? (
+              [1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="bg-white rounded-lg shadow-sm border overflow-hidden flex flex-col h-full animate-pulse">
+                  <div className="h-32 bg-slate-200"></div>
+                  <div className="p-4 space-y-2 flex-grow">
+                    <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-slate-150 rounded w-1/2"></div>
+                  </div>
+                  <div className="p-4 pt-0">
+                    <div className="h-8 bg-slate-200 rounded-lg w-full"></div>
+                  </div>
+                </div>
+              ))
+            ) : filteredProducts.map(product => (
               <div key={product._id} className="bg-white rounded-lg shadow-sm border overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow">
                 <div className="relative h-32 bg-gray-100 overflow-hidden">
                   {product.image ? (
@@ -292,7 +315,7 @@ const Kasir = () => {
                     <span className="text-xl font-bold text-gray-800">{formatCurrency(getTotal())}</span>
                 </div>
                 <button
-                    onClick={handleCheckout}
+                    onClick={handleOpenCheckoutModal}
                     disabled={!isCartValid()}
                     className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-300"
                 >
@@ -301,6 +324,94 @@ const Kasir = () => {
             </div>
         </div>
       </div>
+
+      {/* Checkout Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+            {/* Modal Header */}
+            <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/30">
+                  <FaShoppingCart size={18} />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg italic tracking-tight">Konfirmasi Transaksi</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Periksa Rincian Belanja Kasir</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => !isSubmitting && setShowConfirmModal(false)}
+                disabled={isSubmitting}
+                className="text-slate-400 hover:text-white disabled:opacity-30 p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <FaTimes size={14} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Ringkasan Barang ({cart.length} Jenis)</p>
+                <div className="max-h-[180px] overflow-y-auto pr-1 space-y-2.5 custom-scrollbar">
+                  {cart.map((item) => (
+                    <div key={item.product._id} className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded bg-blue-50 text-blue-600 font-black text-[10px] flex items-center justify-center border border-blue-100">
+                          {item.quantity}
+                        </span>
+                        <span className="font-bold text-slate-700">{item.product.name}</span>
+                      </div>
+                      <span className="font-black text-slate-900 italic">
+                        {formatCurrency((Number(item.quantity) || 0) * (Number(item.sellingPrice) || 0))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Total Card */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex justify-between items-center">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Pembayaran</p>
+                  <p className="text-xl font-black text-blue-700 italic tracking-tight">{formatCurrency(getTotal())}</p>
+                </div>
+                <div className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-wider">
+                  Tunai / Kasir
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-6 bg-slate-50/50 border-t border-slate-100 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                disabled={isSubmitting}
+                className="w-full py-3 rounded-2xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-100 disabled:opacity-50 transition-all italic"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmCheckout}
+                disabled={isSubmitting}
+                className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-600/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 italic"
+              >
+                {isSubmitting ? (
+                  <>
+                    <FaSpinner className="animate-spin" size={14} />
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <>
+                    <FaCheckCircle size={14} />
+                    <span>Konfirmasi & Bayar</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showReceipt && lastTransaction && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

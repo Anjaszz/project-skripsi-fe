@@ -3,10 +3,13 @@ import { authAPI } from '../services/api';
 import { FaUser, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendarAlt, FaSearch } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 
+import Pagination from '../components/Pagination';
+
 const DaftarPelanggan = () => {
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [displayLimit, setDisplayLimit] = useState(15);
     const toast = useToast();
 
     useEffect(() => {
@@ -32,7 +35,7 @@ const DaftarPelanggan = () => {
         (c.phone || '').includes(searchTerm)
     );
 
-    if (loading) return <div className="flex justify-center p-20"><div className="spinner"></div></div>;
+    const paginatedCustomers = filteredCustomers.slice(0, displayLimit);
 
     return (
         <div className="space-y-6">
@@ -51,7 +54,10 @@ const DaftarPelanggan = () => {
                         placeholder="Cari nama, email, atau nomor telepon..."
                         className="w-full pl-12 pr-6 py-3 border border-slate-100 rounded-xl outline-none focus:ring-1 focus:ring-blue-600 font-medium"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setDisplayLimit(15);
+                        }}
                     />
                 </div>
 
@@ -66,14 +72,23 @@ const DaftarPelanggan = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {filteredCustomers.length === 0 ? (
+                            {loading ? (
+                                [1, 2, 3, 4, 5].map(i => (
+                                    <tr key={i} className="animate-pulse">
+                                        <td className="py-5 px-4"><div className="h-10 bg-slate-200 rounded-xl w-3/4"></div></td>
+                                        <td className="py-5 px-4"><div className="h-8 bg-slate-150 rounded-lg w-1/2"></div></td>
+                                        <td className="py-5 px-4"><div className="h-8 bg-slate-200 rounded-lg w-2/3"></div></td>
+                                        <td className="py-5 px-4"><div className="h-6 bg-slate-150 rounded-lg w-1/3"></div></td>
+                                    </tr>
+                                ))
+                            ) : filteredCustomers.length === 0 ? (
                                 <tr>
                                     <td colSpan="4" className="py-12 text-center text-slate-400 font-bold italic text-sm">
                                         Tidak ada pelanggan ditemukan
                                     </td>
                                 </tr>
                             ) : (
-                                filteredCustomers.map((customer) => (
+                                paginatedCustomers.map((customer) => (
                                     <tr key={customer._id} className="hover:bg-slate-50/50 transition-colors group">
                                         <td className="py-5 px-4">
                                             <div className="flex items-center gap-3">
@@ -116,6 +131,12 @@ const DaftarPelanggan = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    displayLimit={displayLimit}
+                    totalItems={filteredCustomers.length}
+                    onLoadMore={() => setDisplayLimit(prev => prev + 15)}
+                />
             </div>
         </div>
     );

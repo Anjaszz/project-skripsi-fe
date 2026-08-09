@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { inventoryAPI, variantAPI, exportAPI } from '../services/api';
 import { FaHistory, FaCalendar, FaFileExcel, FaFilePdf, FaFilter } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
+import Pagination from '../components/Pagination';
 
 const StockHistory = () => {
   const [history, setHistory] = useState([]);
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [displayLimit, setDisplayLimit] = useState(15);
   const [searchTerm, setSearchTerm] = useState('');
   const [productFilter, setProductFilter] = useState('');
   const [variantFilter, setVariantFilter] = useState('');
@@ -97,6 +99,8 @@ const StockHistory = () => {
     return matchSearch && matchProduct && matchVariant && matchDate;
   });
 
+  const paginatedHistory = filteredHistory.slice(0, displayLimit);
+
   // Calculate summary
   const summary = {
     totalEntries: filteredHistory.length,
@@ -143,14 +147,6 @@ const StockHistory = () => {
   };
 
   const hasActiveFilters = searchTerm || productFilter || variantFilter || dateFilter.startDate || dateFilter.endDate;
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="spinner"></div>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -349,14 +345,26 @@ const StockHistory = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredHistory.length === 0 ? (
+              {loading ? (
+                [1, 2, 3, 4, 5].map(i => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-4"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-slate-150 rounded w-28"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-40"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-slate-150 rounded w-20"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-12 ml-auto"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-slate-150 rounded w-24 ml-auto"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded w-28 ml-auto"></div></td>
+                  </tr>
+                ))
+              ) : filteredHistory.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                     {history.length === 0 ? 'Belum ada riwayat stok masuk' : 'Tidak ada data yang sesuai dengan filter'}
                   </td>
                 </tr>
               ) : (
-                filteredHistory.map((item, index) => (
+                paginatedHistory.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {index + 1}
@@ -386,6 +394,12 @@ const StockHistory = () => {
           </table>
         </div>
       </div>
+
+      <Pagination
+        displayLimit={displayLimit}
+        totalItems={filteredHistory.length}
+        onLoadMore={() => setDisplayLimit(prev => prev + 15)}
+      />
 
       {/* Export Modal */}
       {showExportModal && (

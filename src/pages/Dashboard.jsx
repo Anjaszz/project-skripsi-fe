@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { dashboardAPI } from '../services/api';
-import { FaMoneyBillWave, FaShoppingCart, FaBox, FaChartLine } from 'react-icons/fa';
+import { dashboardAPI, inventoryAPI } from '../services/api';
+import { FaMoneyBillWave, FaShoppingCart, FaBox, FaChartLine, FaExclamationTriangle, FaTimesCircle } from 'react-icons/fa';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ComposedChart, Bar, Line, Area, Legend
@@ -9,6 +9,7 @@ import {
 const Dashboard = () => {
   const [summary, setSummary] = useState(null);
   const [salesData, setSalesData] = useState([]);
+  const [lowStockItems, setLowStockItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,13 +19,16 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [summaryRes, salesRes] = await Promise.all([
+      const [summaryRes, salesRes, invRes] = await Promise.all([
         dashboardAPI.getSummary(),
-        dashboardAPI.getSalesReport({ period: 'daily' })
+        dashboardAPI.getSalesReport({ period: 'daily' }),
+        inventoryAPI.getAll()
       ]);
 
       setSummary(summaryRes.data.data);
       setSalesData(salesRes.data.data.groupedData || []);
+      const allInv = invRes.data.data || [];
+      setLowStockItems(allInv.filter(item => (Number(item.stock) || 0) < 10));
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -80,7 +84,7 @@ const Dashboard = () => {
       <h1 className="text-xl md:text-2xl font-bold text-gray-800">Dashboard</h1>
       
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6">
         {loading ? (
           [0,1,2].map(i => (
             <div key={i} className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-200 animate-pulse">
@@ -162,9 +166,10 @@ const Dashboard = () => {
                   <YAxis 
                     yAxisId="right" 
                     orientation="right" 
-                    tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 'bold'}} 
+                    tick={{fontSize: 10, fill: '#10b981', fontWeight: 'bold'}} 
                     axisLine={false} 
                     tickLine={false}
+                    tickFormatter={(value) => `${value} Trx`}
                   />
                   <Tooltip 
                     contentStyle={{
@@ -239,24 +244,50 @@ const Dashboard = () => {
                     </div>
                     <span className="font-bold text-gray-800">{summary?.inventory?.totalProducts || 0}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <FaMoneyBillWave className="text-green-500" />
-                        <span className="text-sm text-gray-600">Total Modal</span>
+                <div className="pt-4 border-t space-y-3">
+                    <div className="flex justify-between items-center mb-1">
+                         <span className="text-xs font-bold text-gray-500">Kesehatan Stok</span>
+                         <span className="text-xs font-black text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">{lowStockItems.length} Produk Menipis</span>
                     </div>
-                    <span className="font-bold text-gray-800 text-sm">{formatCurrency(summary?.inventory?.totalCapital || 0)}</span>
-                </div>
-                <div className="pt-4 border-t">
-                    <div className="flex justify-between items-center mb-2">
-                         <span className="text-xs text-gray-500">Kesehatan Stok</span>
-                         <span className="text-xs font-bold text-red-500">{summary?.inventory?.lowStockProducts || 0} Menipis</span>
-                    </div>
-                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden mb-3">
                         <div 
                             className="bg-red-500 h-full rounded-full transition-all duration-1000" 
-                            style={{ width: `${Math.min(100, ((summary?.inventory?.lowStockProducts || 0) / (summary?.inventory?.totalProducts || 1)) * 100)}%` }}
+                            style={{ width: `${Math.min(100, (lowStockItems.length / (summary?.inventory?.totalProducts || 1)) * 100)}%` }}
                         ></div>
                     </div>
+
+                    {/* Low Stock Detailed List */}
+                    {lowStockItems.length === 0 ? (
+                      <p className="text-xs text-emerald-600 font-bold italic pt-1">✓ Semua stok produk dalam keadaan aman</p>
+                    ) : (
+                      <div className="space-y-2 pt-2 border-t border-slate-100">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Rincian Stok Menipis (&lt; 10):</p>
+                        <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                          {lowStockItems.map((item) => (
+                            <div key={item._id} className="flex justify-between items-center p-2.5 bg-red-50/60 rounded-xl border border-red-100">
+                              <div className="flex items-center gap-2">
+                                {item.stock === 0 ? (
+                                  <FaTimesCircle className="text-red-600 shrink-0" size={14} />
+                                ) : (
+                                  <FaExclamationTriangle className="text-amber-500 shrink-0" size={14} />
+                                )}
+                                <div>
+                                  <p className="text-xs font-bold text-slate-800 leading-tight">{item.name}</p>
+                                  {item.variantName && (
+                                    <p className="text-[10px] text-slate-500 font-medium italic">{item.variantName}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-lg text-[11px] font-black italic ${
+                                item.stock === 0 ? 'bg-red-600 text-white' : 'bg-amber-100 text-amber-800 border border-amber-200'
+                              }`}>
+                                {item.stock === 0 ? 'Habis (0)' : `Sisa ${item.stock}`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </div>
             </div>
             )}

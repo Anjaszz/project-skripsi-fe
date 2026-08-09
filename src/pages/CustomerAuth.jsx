@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaUser, FaLock, FaEnvelope, FaPhone, FaMapMarkerAlt, FaArrowLeft, FaTint, FaChevronRight, FaCheckCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaUser, FaLock, FaEnvelope, FaPhone, FaMapMarkerAlt, FaArrowLeft, FaTint, FaChevronRight, FaCheckCircle, FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 
 const CustomerAuth = () => {
@@ -239,7 +239,12 @@ const CustomerAuth = () => {
                                 disabled={loading}
                                 className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-slate-100 hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-50 italic flex items-center justify-center gap-3 group"
                             >
-                                {loading ? 'Memproses...' : (
+                                {loading ? (
+                                    <>
+                                        <FaSpinner className="animate-spin" size={14} />
+                                        <span>Memproses...</span>
+                                    </>
+                                ) : (
                                     <>
                                         {isLogin ? 'Masuk' : 'Daftar Mitra'} <FaChevronRight className="group-hover:translate-x-1 transition-transform" />
                                     </>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { FaShoppingCart, FaSearch, FaPhoneAlt, FaMapMarkerAlt, FaWhatsapp, FaTrash, FaPlus, FaMinus, FaUser, FaInfoCircle, FaBox, FaCreditCard, FaLock, FaTint, FaShieldAlt, FaTruck, FaArrowRight, FaTimes, FaCheckCircle, FaClock, FaChevronRight, FaArrowLeft, FaMoneyBillWave, FaTimesCircle, FaBars } from 'react-icons/fa';
+import { FaShoppingCart, FaSearch, FaPhoneAlt, FaMapMarkerAlt, FaWhatsapp, FaTrash, FaPlus, FaMinus, FaUser, FaInfoCircle, FaBox, FaCreditCard, FaLock, FaTint, FaShieldAlt, FaTruck, FaArrowRight, FaTimes, FaCheckCircle, FaClock, FaChevronRight, FaArrowLeft, FaMoneyBillWave, FaTimesCircle, FaBars, FaSpinner } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -43,13 +43,17 @@ const LandingPage = () => {
     const toast = useToast();
     const navigate = useNavigate();
     const [menu, setMenu] = useState([]);
+    const [isMenuLoading, setIsMenuLoading] = useState(true);
     const [cart, setCart] = useState([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [isCheckoutSubmitting, setIsCheckoutSubmitting] = useState(false);
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [isStatusLoading, setIsStatusLoading] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [paymentMethods, setPaymentMethods] = useState([]);
+    const [isPaymentLoading, setIsPaymentLoading] = useState(true);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('midtrans');
     const [searchOrderId, setSearchOrderId] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -83,14 +87,18 @@ const LandingPage = () => {
     }, []);
 
     const handleCheckStatus = async (id) => {
+        setIsStatusLoading(true);
+        setIsStatusModalOpen(true);
         try {
             const res = await axios.get(`${API_URL}/orders/public/${id}`);
             setSelectedOrder(res.data.data);
-            setIsStatusModalOpen(true);
         } catch (error) {
             toast.error('Pesanan tidak ditemukan');
+            setIsStatusModalOpen(false);
             // Clean up URL
             window.history.replaceState({}, '', '/');
+        } finally {
+            setIsStatusLoading(false);
         }
     };
 
@@ -106,11 +114,14 @@ const LandingPage = () => {
     }, [isCheckoutOpen, user]);
 
     const fetchMenu = async () => {
+        setIsMenuLoading(true);
         try {
             const res = await axios.get(`${API_URL}/menu?isActive=true`);
             setMenu(res.data.data);
         } catch (error) {
             console.error('Fetch error:', error);
+        } finally {
+            setIsMenuLoading(false);
         }
     };
 
@@ -119,6 +130,7 @@ const LandingPage = () => {
     }, []);
 
     const fetchPaymentMethods = async () => {
+        setIsPaymentLoading(true);
         try {
             const res = await axios.get(`${API_URL}/payment-methods`);
             const active = res.data.data.filter(m => m.isActive);
@@ -126,6 +138,8 @@ const LandingPage = () => {
             if (active.length > 0) setSelectedPaymentMethod(active[0].name);
         } catch (error) {
             console.error('Fetch payment error:', error);
+        } finally {
+            setIsPaymentLoading(false);
         }
     };
 
@@ -167,8 +181,9 @@ const LandingPage = () => {
 
     const handleCheckout = async (e) => {
         e.preventDefault();
-        if (cart.length === 0) return;
+        if (cart.length === 0 || isCheckoutSubmitting) return;
         
+        setIsCheckoutSubmitting(true);
         const currentTotal = getTotal();
         try {
             const token = localStorage.getItem('token');
@@ -238,6 +253,8 @@ const LandingPage = () => {
         } catch (error) {
             console.error('Checkout Error:', error);
             toast.error(error.response?.data?.message || 'Gagal memproses pesanan');
+        } finally {
+            setIsCheckoutSubmitting(false);
         }
     };
 
@@ -442,7 +459,30 @@ const LandingPage = () => {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    {filteredMenu.map(item => (
+                    {isMenuLoading ? (
+                        [1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                            <div key={i} className="bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col animate-pulse">
+                                <div className="aspect-[4/5] bg-slate-200/70 relative">
+                                    <div className="absolute top-3 right-3 w-16 h-4 bg-slate-300/60 rounded-full"></div>
+                                </div>
+                                <div className="p-4 sm:p-8 space-y-4 flex-grow flex flex-col justify-between">
+                                    <div className="space-y-2">
+                                        <div className="h-5 bg-slate-200 rounded-lg w-4/5"></div>
+                                        <div className="h-4 bg-slate-100 rounded-md w-1/2"></div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="h-6 bg-slate-200 rounded-lg w-1/3"></div>
+                                        <div className="h-10 sm:h-12 bg-slate-200 rounded-xl sm:rounded-2xl w-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : filteredMenu.length === 0 ? (
+                        <div className="col-span-full py-16 text-center text-slate-400 font-bold italic">
+                            Tidak ada produk yang ditemukan.
+                        </div>
+                    ) : (
+                        filteredMenu.map(item => (
                         <div key={item._id} className="bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden group hover:border-blue-200 transition-all flex flex-col">
                             <div className="relative aspect-[4/5] overflow-hidden bg-slate-50">
                                 <img 
@@ -500,7 +540,7 @@ const LandingPage = () => {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    )))}
                 </div>
             </section>
 
@@ -874,8 +914,18 @@ agen dan toko."
                             <div className="space-y-4">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Metode Pembayaran</label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {paymentMethods.length === 0 ? (
-                                        <div className="col-span-full py-4 text-center text-slate-300 font-bold italic animate-pulse">Menghubungkan layanan pembayaran...</div>
+                                    {isPaymentLoading ? (
+                                        [1, 2].map(i => (
+                                            <div key={i} className="p-6 rounded-[2rem] border-2 border-slate-100 bg-white flex items-center gap-4 animate-pulse">
+                                                <div className="w-12 h-12 rounded-2xl bg-slate-200 shrink-0"></div>
+                                                <div className="space-y-2 flex-1">
+                                                    <div className="h-4 bg-slate-200 rounded-md w-2/3"></div>
+                                                    <div className="h-3 bg-slate-150 rounded-md w-1/3"></div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : paymentMethods.length === 0 ? (
+                                        <div className="col-span-full py-4 text-center text-slate-300 font-bold italic">Belum ada metode pembayaran tersedia</div>
                                     ) : (
                                         paymentMethods
                                             .filter(m => !m.isRestrictedToLoggedIn || (m.isRestrictedToLoggedIn && user))
@@ -913,8 +963,22 @@ agen dan toko."
                                         {selectedPaymentMethod === 'midtrans' ? 'Secure Gateway \n by Midtrans Snap' : 'Manual Verification \n by Logistics Team'}
                                     </p>
                                 </div>
-                                <button type="submit" className="w-full sm:w-auto px-16 py-5 bg-slate-900 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest hover:bg-blue-600 transition-all shadow-2xl shadow-slate-200 italic flex items-center gap-3">
-                                    {selectedPaymentMethod === 'midtrans' ? 'Bayar Sekarang' : 'Pesan Sekarang (COD)'} Rp {getTotal().toLocaleString()} <FaArrowRight />
+                                <button 
+                                    type="submit" 
+                                    disabled={isCheckoutSubmitting}
+                                    className="w-full sm:w-auto px-16 py-5 bg-slate-900 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-2xl shadow-slate-200 italic flex items-center justify-center gap-3"
+                                >
+                                    {isCheckoutSubmitting ? (
+                                        <>
+                                            <FaSpinner className="animate-spin" size={14} />
+                                            <span>Memproses Pesanan...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>{selectedPaymentMethod === 'midtrans' ? 'Bayar Sekarang' : 'Pesan Sekarang (COD)'} Rp {getTotal().toLocaleString()}</span>
+                                            <FaArrowRight />
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>
@@ -1008,13 +1072,31 @@ agen dan toko."
                 </div>
             )}
             {/* Modal Status Pesanan (Dunia Nyata) */}
-            {isStatusModalOpen && selectedOrder && (
+            {isStatusModalOpen && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-500" onClick={() => {
                         setIsStatusModalOpen(false);
                         window.history.replaceState({}, '', '/');
                     }}></div>
                     <div className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
+                        {isStatusLoading || !selectedOrder ? (
+                            <div className="p-10 space-y-8 animate-pulse">
+                                <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
+                                    <div className="w-12 h-12 bg-slate-200 rounded-2xl"></div>
+                                    <div className="space-y-2 flex-1">
+                                        <div className="h-5 bg-slate-200 rounded-lg w-1/3"></div>
+                                        <div className="h-4 bg-slate-150 rounded-md w-1/4"></div>
+                                    </div>
+                                </div>
+                                <div className="h-3 bg-slate-200 rounded-full w-full"></div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="h-28 bg-slate-100 rounded-[2rem]"></div>
+                                    <div className="h-28 bg-slate-100 rounded-[2rem]"></div>
+                                </div>
+                                <div className="h-40 bg-slate-100 rounded-[2rem]"></div>
+                            </div>
+                        ) : (
+                        <>
                         {/* Header */}
                         <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <div className="flex items-center gap-4">
@@ -1161,6 +1243,8 @@ agen dan toko."
                                 Tutup <FaChevronRight size={10} />
                             </button>
                         </div>
+                        </>
+                        )}
                     </div>
                 </div>
             )}

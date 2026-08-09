@@ -4,6 +4,8 @@ import { FaFileExcel, FaFilePdf, FaCalendar, FaEye, FaTimes, FaHistory, FaSearch
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 
+import Pagination from '../components/Pagination';
+
 const Laporan = () => {
   const [activeTab, setActiveTab] = useState('purchases');
   const [salesReport, setSalesReport] = useState(null);
@@ -19,6 +21,7 @@ const Laporan = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [productFilter, setProductFilter] = useState('');
   const [variantFilter, setVariantFilter] = useState('');
+  const [displayLimit, setDisplayLimit] = useState(15);
   
   const [dateRange, setDateRange] = useState(() => {
     const end = new Date();
@@ -135,6 +138,8 @@ const Laporan = () => {
     return matchSearch && matchProduct && matchVariant && matchDate;
   });
 
+  const paginatedPurchases = filteredPurchases.slice(0, displayLimit);
+
   const purchaseSummary = {
       totalEntries: filteredPurchases.length,
       totalQuantity: filteredPurchases.reduce((sum, item) => sum + item.quantity, 0),
@@ -239,7 +244,14 @@ const Laporan = () => {
           </div>
           
           {loading ? (
-            <div className="flex justify-center py-20"><div className="spinner"></div></div>
+            <div className="p-6 space-y-6 animate-pulse">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="h-24 bg-slate-100 rounded-lg"></div>
+                    <div className="h-24 bg-slate-100 rounded-lg"></div>
+                    <div className="h-24 bg-slate-100 rounded-lg"></div>
+                </div>
+                <div className="h-64 bg-slate-100 rounded-lg"></div>
+            </div>
           ) : (
             <div className="p-6">
               {activeTab === 'sales' && salesReport && (
@@ -322,7 +334,7 @@ const Laporan = () => {
                           </thead>
                           <tbody className="divide-y">
                               {filteredPurchases.length > 0 ? (
-                                  filteredPurchases.map((item, i) => (
+                                  paginatedPurchases.map((item, i) => (
                                       <tr key={i} className="hover:bg-gray-50">
                                           <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(item.dateAdded)}</td>
                                           <td className="px-4 py-3 font-bold text-gray-800">{item.productName}</td>
@@ -338,6 +350,12 @@ const Laporan = () => {
                           </tbody>
                       </table>
                   </div>
+
+                  <Pagination
+                    displayLimit={displayLimit}
+                    totalItems={filteredPurchases.length}
+                    onLoadMore={() => setDisplayLimit(prev => prev + 15)}
+                  />
                 </div>
               )}
 

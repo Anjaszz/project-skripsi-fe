@@ -3,6 +3,8 @@ import axios from 'axios';
 import { FaCheck, FaTimes, FaSpinner, FaBoxOpen, FaUser, FaPhoneAlt, FaMapMarkerAlt, FaCalendar, FaClock, FaWhatsapp } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 
+import Pagination from '../components/Pagination';
+
 const formatDateTime = (dateString) => {
     if (!dateString) return { date: '-', time: '-' };
     const d = new Date(dateString);
@@ -15,6 +17,7 @@ const Pesanan = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('pesanan masuk');
+    const [displayLimit, setDisplayLimit] = useState(15);
     const toast = useToast();
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -77,6 +80,8 @@ const Pesanan = () => {
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [selectedOrderIdForReject, setSelectedOrderIdForReject] = useState(null);
     const [rejectReason, setRejectReason] = useState('');
+    const [updatingOrderId, setUpdatingOrderId] = useState(null);
+    const [isRejectSubmitting, setIsRejectSubmitting] = useState(false);
 
     const updateStatus = async (id, status) => {
         if (status === 'dibatalkan') {
@@ -86,6 +91,7 @@ const Pesanan = () => {
             return;
         }
 
+        setUpdatingOrderId(id);
         try {
             await axios.put(`${API_URL}/orders/${id}/status`, { status }, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -94,15 +100,18 @@ const Pesanan = () => {
             fetchOrders();
         } catch (error) {
             toast.error('Gagal mengubah status pesanan');
+        } finally {
+            setUpdatingOrderId(null);
         }
     };
 
     const handleConfirmReject = async () => {
-        if (!rejectReason.trim()) {
-            toast.error('Alasan penolakan harus diisi!');
+        if (!rejectReason.trim() || isRejectSubmitting) {
+            if (!rejectReason.trim()) toast.error('Alasan penolakan harus diisi!');
             return;
         }
 
+        setIsRejectSubmitting(true);
         try {
             await axios.put(`${API_URL}/orders/${selectedOrderIdForReject}/status`, { 
                 status: 'dibatalkan', 
@@ -115,6 +124,8 @@ const Pesanan = () => {
             fetchOrders();
         } catch (error) {
             toast.error('Gagal menolak pesanan');
+        } finally {
+            setIsRejectSubmitting(false);
         }
     };
 
@@ -135,7 +146,7 @@ const Pesanan = () => {
 
     const filteredOrders = orders.filter(order => order.status === activeTab && isOrderValidForProcessing(order));
 
-    if (loading) return <div className="flex justify-center items-center h-full"><FaSpinner className="animate-spin text-3xl text-blue-600" /></div>;
+    const paginatedOrders = filteredOrders.slice(0, displayLimit);
 
     return (
         <div className="space-y-6">
@@ -152,7 +163,10 @@ const Pesanan = () => {
                         return (
                             <button
                                 key={status.id}
-                                onClick={() => setActiveTab(status.id)}
+                                onClick={() => {
+                                    setActiveTab(status.id);
+                                    setDisplayLimit(15);
+                                }}
                                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 ${
                                     activeTab === status.id 
                                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' 
@@ -168,13 +182,28 @@ const Pesanan = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredOrders.length === 0 ? (
+                {loading ? (
+                    [1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="bg-white rounded-[24px] overflow-hidden shadow-sm border p-6 space-y-4 animate-pulse">
+                            <div className="flex justify-between items-center">
+                                <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                                <div className="h-6 bg-slate-200 rounded-lg w-1/4"></div>
+                            </div>
+                            <div className="h-20 bg-slate-100 rounded-2xl"></div>
+                            <div className="h-12 bg-slate-100 rounded-xl"></div>
+                            <div className="flex justify-between items-center pt-2">
+                                <div className="h-6 bg-slate-200 rounded w-1/3"></div>
+                                <div className="h-10 bg-slate-200 rounded-xl w-24"></div>
+                            </div>
+                        </div>
+                    ))
+                ) : filteredOrders.length === 0 ? (
                     <div className="col-span-full py-24 text-center bg-white rounded-[32px] border-2 border-dashed border-gray-100 shadow-sm">
                         <FaBoxOpen className="mx-auto text-5xl text-gray-200 mb-6" />
                         <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-xs">Tidak ada pesanan valid dengan status "{activeTab}"</p>
                     </div>
                 ) : (
-                    filteredOrders.map((order) => (
+                    paginatedOrders.map((order) => (
                         <div key={order._id} className="bg-white rounded-[24px] overflow-hidden shadow-sm border hover:shadow-lg transition-all flex flex-col group">
                             <div className="p-4 border-b bg-gray-50 flex justify-between items-start gap-4">
                                 <div className="space-y-2">
@@ -275,14 +304,16 @@ const Pesanan = () => {
                                         <>
                                             <button 
                                                 onClick={() => updateStatus(order._id, 'di proses')}
-                                                className="bg-blue-600 text-white p-3 rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all hover:scale-105"
+                                                disabled={updatingOrderId === order._id}
+                                                className="bg-blue-600 text-white p-3 rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[44px]"
                                                 title="Terima Pesanan"
                                             >
-                                                <FaCheck />
+                                                {updatingOrderId === order._id ? <FaSpinner className="animate-spin" /> : <FaCheck />}
                                             </button>
                                             <button 
                                                 onClick={() => updateStatus(order._id, 'dibatalkan')}
-                                                className="bg-red-500 text-white p-3 rounded-2xl hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all hover:scale-105"
+                                                disabled={updatingOrderId === order._id}
+                                                className="bg-red-500 text-white p-3 rounded-2xl hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[44px]"
                                                 title="Tolak Pesanan"
                                             >
                                                 <FaTimes />
@@ -292,9 +323,20 @@ const Pesanan = () => {
                                     {order.status === 'di proses' && (
                                         <button 
                                             onClick={() => updateStatus(order._id, 'selesai')}
-                                            className="bg-green-600 text-white px-6 py-3 rounded-2xl font-black text-xs hover:bg-green-700 shadow-lg shadow-green-500/20 transition-all hover:scale-105"
+                                            disabled={updatingOrderId === order._id}
+                                            className="bg-green-600 text-white px-6 py-3 rounded-2xl font-black text-xs hover:bg-green-700 shadow-lg shadow-green-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
-                                            Selesaikan <FaCheck className="inline ml-1" />
+                                            {updatingOrderId === order._id ? (
+                                                <>
+                                                    <FaSpinner className="animate-spin" />
+                                                    <span>Memproses...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>Selesaikan</span>
+                                                    <FaCheck />
+                                                </>
+                                            )}
                                         </button>
                                     )}
                                 </div>
@@ -304,10 +346,16 @@ const Pesanan = () => {
                 )}
             </div>
 
+            <Pagination
+                displayLimit={displayLimit}
+                totalItems={filteredOrders.length}
+                onLoadMore={() => setDisplayLimit(prev => prev + 15)}
+            />
+
             {/* Custom Reject Modal */}
             {isRejectModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsRejectModalOpen(false)}></div>
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => !isRejectSubmitting && setIsRejectModalOpen(false)}></div>
                     <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-10 animate-in zoom-in-95 duration-300">
                         <div className="space-y-6">
                             <div className="text-center space-y-2">
@@ -324,21 +372,31 @@ const Pesanan = () => {
                                     placeholder="Contoh: Stok barang kosong, Alamat di luar jangkauan..."
                                     value={rejectReason}
                                     onChange={(e) => setRejectReason(e.target.value)}
+                                    disabled={isRejectSubmitting}
                                 ></textarea>
                             </div>
 
                             <div className="flex gap-4 pt-4">
                                 <button 
                                     onClick={() => setIsRejectModalOpen(false)}
-                                    className="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-200 transition-all italic"
+                                    disabled={isRejectSubmitting}
+                                    className="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-200 disabled:opacity-50 transition-all italic"
                                 >
                                     Batalkan
                                 </button>
                                 <button 
                                     onClick={handleConfirmReject}
-                                    className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-700 shadow-xl shadow-red-200 transition-all italic"
+                                    disabled={isRejectSubmitting}
+                                    className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-700 shadow-xl shadow-red-200 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 italic"
                                 >
-                                    Tolak Sekarang
+                                    {isRejectSubmitting ? (
+                                        <>
+                                            <FaSpinner className="animate-spin" size={14} />
+                                            <span>Menolak...</span>
+                                        </>
+                                    ) : (
+                                        <span>Tolak Sekarang</span>
+                                    )}
                                 </button>
                             </div>
                         </div>

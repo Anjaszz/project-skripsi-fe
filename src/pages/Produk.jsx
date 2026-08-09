@@ -1,9 +1,21 @@
 import { useState, useEffect } from 'react';
 import { menuAPI, variantAPI, inventoryAPI } from '../services/api';
-import { FaPlus, FaEdit, FaTrash, FaImage, FaTimes, FaSearch, FaBox } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaImage, FaTimes, FaSearch, FaBox, FaSpinner, FaExclamationTriangle, FaTimesCircle } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
+
+import Pagination from '../components/Pagination';
+
+const formatInputNumber = (val) => {
+  if (val === undefined || val === null || val === '') return '';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+const parseInputNumber = (val) => {
+  if (!val) return '';
+  return val.toString().replace(/\./g, '').replace(/\D/g, '');
+};
 
 const Produk = () => {
   const [menuItems, setMenuItems] = useState([]);
@@ -11,6 +23,8 @@ const Produk = () => {
   const [inventoryItems, setInventoryItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState(15);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -24,6 +38,7 @@ const Produk = () => {
   const [editingId, setEditingId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
   const toast = useToast();
@@ -93,7 +108,9 @@ const Produk = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    if (isSaving) return;
+
+    setIsSaving(true);
     const data = new FormData();
     data.append('name', formData.name);
     data.append('price', formData.price);
@@ -113,12 +130,15 @@ const Produk = () => {
         await menuAPI.create(data);
         toast.success('Produk berhasil ditambahkan');
       }
+      await new Promise(r => setTimeout(r, 450));
       setShowModal(false);
       resetForm();
       fetchData();
     } catch (error) {
       console.error('Error:', error);
       toast.error(error.response?.data?.message || 'Gagal menyimpan produk');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -142,13 +162,20 @@ const Produk = () => {
   };
 
   const confirmDelete = async () => {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
     try {
       await menuAPI.delete(deleteId);
       toast.success('Produk berhasil dihapus');
+      await new Promise(r => setTimeout(r, 450));
       fetchData();
+      setShowDeleteModal(false);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Gagal menghapus produk');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -178,9 +205,7 @@ const Produk = () => {
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-full"><div className="spinner"></div></div>;
-  }
+  const paginatedItems = filteredItems.slice(0, displayLimit);
 
   return (
     <div className="space-y-6">
@@ -205,18 +230,35 @@ const Produk = () => {
             placeholder="Cari produk..."
             className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setDisplayLimit(15);
+            }}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredItems.length === 0 ? (
+        {loading ? (
+          [1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            <div key={i} className="bg-white rounded-lg shadow-sm border overflow-hidden flex flex-col h-full animate-pulse">
+              <div className="h-48 bg-slate-200"></div>
+              <div className="p-4 space-y-3 flex-grow">
+                <div className="h-5 bg-slate-200 rounded w-3/4"></div>
+                <div className="h-4 bg-slate-150 rounded w-1/2"></div>
+              </div>
+              <div className="p-4 bg-gray-50 border-t flex gap-2">
+                <div className="h-9 bg-slate-200 rounded-lg flex-1"></div>
+                <div className="h-9 bg-slate-200 rounded-lg flex-1"></div>
+              </div>
+            </div>
+          ))
+        ) : filteredItems.length === 0 ? (
           <div className="col-span-full py-12 text-center bg-white rounded-lg border-2 border-dashed">
             <p className="text-gray-500">Tidak ada produk ditemukan</p>
           </div>
         ) : (
-          filteredItems.map((item) => (
+          paginatedItems.map((item) => (
             <div key={item._id} className="bg-white rounded-lg shadow-sm border overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow">
               <div className="relative h-48 bg-gray-100 overflow-hidden">
                 {item.image ? (
@@ -232,9 +274,29 @@ const Produk = () => {
                 )}
                 
                 {item.inventory && (
-                  <div className="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded shadow-sm flex items-center gap-1.5 border border-gray-100">
-                    <FaBox size={10} className="text-blue-500" />
-                    <span className="text-[10px] font-bold text-gray-700">Stock: {item.inventory.stock}</span>
+                  <div className={`absolute top-2 left-2 px-2.5 py-1 rounded-lg shadow-md flex items-center gap-1.5 border font-black text-[10px] italic ${
+                    item.inventory.stock === 0
+                      ? 'bg-red-600 text-white border-red-700'
+                      : item.inventory.stock < 10
+                        ? 'bg-amber-500 text-white border-amber-600'
+                        : 'bg-white/90 backdrop-blur text-gray-700 border-gray-100'
+                  }`}>
+                    {item.inventory.stock === 0 ? (
+                      <>
+                        <FaTimesCircle size={12} className="text-white animate-bounce" />
+                        <span>Stok Habis (0)</span>
+                      </>
+                    ) : item.inventory.stock < 10 ? (
+                      <>
+                        <FaExclamationTriangle size={12} className="text-white animate-pulse" />
+                        <span>Stok Menipis ({item.inventory.stock})</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaBox size={10} className="text-blue-500" />
+                        <span>Stock: {item.inventory.stock}</span>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -283,6 +345,12 @@ const Produk = () => {
           ))
         )}
       </div>
+
+      <Pagination
+        displayLimit={displayLimit}
+        totalItems={filteredItems.length}
+        onLoadMore={() => setDisplayLimit(prev => prev + 15)}
+      />
 
       {/* Modal Form */}
       {showModal && (
@@ -355,14 +423,17 @@ const Produk = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Harga Jual (IDR)</label>
-                  <input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                    required
-                    min="0"
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rp</span>
+                    <input
+                      type="text"
+                      value={formatInputNumber(formData.price)}
+                      onChange={(e) => setFormData({...formData, price: parseInputNumber(e.target.value)})}
+                      className="w-full border rounded-lg pl-9 pr-4 py-2 focus:ring-2 focus:ring-blue-500 font-bold text-slate-800"
+                      placeholder="0"
+                      required
+                    />
+                  </div>
                 </div>
                 <div className="flex items-end pb-2">
                     <label className="text-sm font-bold text-gray-700 flex items-center gap-2 cursor-pointer">
@@ -411,12 +482,12 @@ const Produk = () => {
                         </div>
                         <div className="flex-[1.5]">
                           <input 
-                            type="number"
+                            type="text"
                             placeholder="Harga Satuan Grosir"
-                            value={rule.price}
+                            value={formatInputNumber(rule.price)}
                             onChange={(e) => {
                               const newRules = [...formData.wholesalePrices];
-                              newRules[index].price = Number(e.target.value);
+                              newRules[index].price = parseInputNumber(e.target.value);
                               setFormData({...formData, wholesalePrices: newRules});
                             }}
                             className="w-full text-xs font-bold border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-600"
@@ -441,16 +512,25 @@ const Produk = () => {
               <div className="flex gap-2 pt-4">
                 <button
                   type="button"
+                  disabled={isSaving}
                   onClick={() => { setShowModal(false); resetForm(); }}
-                  className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-200"
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-200 disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 shadow-lg"
+                  disabled={isSaving}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Simpan
+                  {isSaving ? (
+                    <>
+                      <FaSpinner className="animate-spin" size={14} />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <span>{editingId ? 'Update' : 'Simpan'}</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -461,13 +541,14 @@ const Produk = () => {
       {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+        onClose={() => !isDeleting && setShowDeleteModal(false)}
         onConfirm={confirmDelete}
         title="Hapus Produk"
         message="Yakin ingin menghapus produk ini?"
         confirmText="Hapus"
         cancelText="Batal"
         type="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaCreditCard, FaMoneyBillWave, FaShieldAlt, FaUserLock, FaToggleOn, FaToggleOff, FaArrowLeft, FaSave } from 'react-icons/fa';
+import { FaCreditCard, FaMoneyBillWave, FaShieldAlt, FaUserLock, FaToggleOn, FaToggleOff, FaArrowLeft, FaSave, FaSpinner } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,6 +9,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const AdminPaymentSettings = () => {
     const [methods, setMethods] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [updatingId, setUpdatingId] = useState(null);
     const toast = useToast();
     const navigate = useNavigate();
 
@@ -37,6 +38,7 @@ const AdminPaymentSettings = () => {
     };
 
     const handleToggle = async (id, field, value) => {
+        setUpdatingId(`${id}-${field}`);
         try {
             const method = methods.find(m => m._id === id);
             const updatedData = { ...method, [field]: value };
@@ -51,6 +53,8 @@ const AdminPaymentSettings = () => {
             }
         } catch (error) {
             toast.error('Gagal memperbarui pengaturan');
+        } finally {
+            setUpdatingId(null);
         }
     };
 
@@ -68,7 +72,20 @@ const AdminPaymentSettings = () => {
                 </div>
 
                 {loading ? (
-                    <div className="py-20 text-center animate-pulse text-slate-300 font-black italic uppercase tracking-widest">Memuat Pengaturan...</div>
+                    <div className="grid gap-6">
+                        {[1, 2].map(i => (
+                            <div key={i} className="bg-white rounded-[2.5rem] border border-slate-100 p-8 md:p-10 flex items-center justify-between animate-pulse">
+                                <div className="flex items-center gap-6">
+                                    <div className="w-16 h-16 rounded-3xl bg-slate-200"></div>
+                                    <div className="space-y-2">
+                                        <div className="h-5 bg-slate-200 rounded-md w-40"></div>
+                                        <div className="h-3 bg-slate-150 rounded-md w-60"></div>
+                                    </div>
+                                </div>
+                                <div className="h-8 bg-slate-200 rounded-full w-24"></div>
+                            </div>
+                        ))}
+                    </div>
                 ) : (
                     <div className="grid gap-6">
                         {methods.map((method) => (
@@ -92,9 +109,10 @@ const AdminPaymentSettings = () => {
                                         <div className="flex items-center gap-3">
                                             <button 
                                                 onClick={() => handleToggle(method._id, 'isActive', !method.isActive)}
-                                                className={`text-3xl transition-colors ${method.isActive ? 'text-blue-600' : 'text-slate-200'}`}
+                                                disabled={updatingId === `${method._id}-isActive`}
+                                                className={`text-3xl transition-colors disabled:opacity-50 ${method.isActive ? 'text-blue-600' : 'text-slate-200'}`}
                                             >
-                                                {method.isActive ? <FaToggleOn /> : <FaToggleOff />}
+                                                {updatingId === `${method._id}-isActive` ? <FaSpinner className="animate-spin text-xl text-blue-600" /> : (method.isActive ? <FaToggleOn /> : <FaToggleOff />)}
                                             </button>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Status Aktif</span>
                                         </div>
@@ -102,9 +120,10 @@ const AdminPaymentSettings = () => {
                                         <div className="flex items-center gap-3">
                                             <button 
                                                 onClick={() => handleToggle(method._id, 'isRestrictedToLoggedIn', !method.isRestrictedToLoggedIn)}
-                                                className={`text-3xl transition-colors ${method.isRestrictedToLoggedIn ? 'text-amber-500' : 'text-slate-200'}`}
+                                                disabled={updatingId === `${method._id}-isRestrictedToLoggedIn`}
+                                                className={`text-3xl transition-colors disabled:opacity-50 ${method.isRestrictedToLoggedIn ? 'text-amber-500' : 'text-slate-200'}`}
                                             >
-                                                {method.isRestrictedToLoggedIn ? <FaToggleOn /> : <FaToggleOff />}
+                                                {updatingId === `${method._id}-isRestrictedToLoggedIn` ? <FaSpinner className="animate-spin text-xl text-amber-500" /> : (method.isRestrictedToLoggedIn ? <FaToggleOn /> : <FaToggleOff />)}
                                             </button>
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic leading-none">Khusus User</span>
