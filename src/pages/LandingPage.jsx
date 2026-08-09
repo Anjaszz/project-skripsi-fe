@@ -9,6 +9,35 @@ import logo from '../assets/logo.jpg';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+const loadSnapScript = () => {
+    return new Promise((resolve) => {
+        if (window.snap && typeof window.snap.pay === 'function') {
+            return resolve(true);
+        }
+
+        let script = document.getElementById('midtrans-snap-script');
+        if (!script) {
+            script = document.createElement('script');
+            script.id = 'midtrans-snap-script';
+            script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
+            script.setAttribute('data-client-key', 'SB-Mid-client-6CGa60nWIQAPV2ct');
+            document.head.appendChild(script);
+        }
+
+        let checkInterval = setInterval(() => {
+            if (window.snap && typeof window.snap.pay === 'function') {
+                clearInterval(checkInterval);
+                resolve(true);
+            }
+        }, 100);
+
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            resolve(Boolean(window.snap && typeof window.snap.pay === 'function'));
+        }, 3000);
+    });
+};
+
 const LandingPage = () => {
     const { user, login } = useAuth();
     const toast = useToast();
@@ -37,6 +66,7 @@ const LandingPage = () => {
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
+        loadSnapScript();
         fetchMenu();
         fetchPaymentMethods();
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -157,7 +187,7 @@ const LandingPage = () => {
             });
 
             if (res.data.success) {
-                const { token, orderNumber, redirect_url } = res.data.data;
+                const { token: snapToken, orderNumber } = res.data.data;
                 setIsCheckoutOpen(false);
                 setCart([]);
 
@@ -175,9 +205,10 @@ const LandingPage = () => {
                     loadGuestHistory();
                 }
                 
-                if (selectedPaymentMethod === 'midtrans') {
-                    if (window.snap && typeof window.snap.pay === 'function' && token) {
-                        window.snap.pay(token, {
+                if (selectedPaymentMethod === 'midtrans' && snapToken) {
+                    const isSnapLoaded = await loadSnapScript();
+                    if (isSnapLoaded && window.snap) {
+                        window.snap.pay(snapToken, {
                             onSuccess: () => {
                                 toast.success('Pembayaran Berhasil!');
                                 handleCheckStatus(orderNumber);
@@ -195,9 +226,6 @@ const LandingPage = () => {
                                 handleCheckStatus(orderNumber);
                             },
                         });
-                    } else if (redirect_url) {
-                        toast.info('Mengarahkan ke pembayaran Midtrans...');
-                        window.location.href = redirect_url;
                     } else {
                         toast.success('Pesanan berhasil dibuat!');
                         handleCheckStatus(orderNumber);

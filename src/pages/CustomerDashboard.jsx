@@ -7,6 +7,35 @@ import { useNavigate, Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+const loadSnapScript = () => {
+    return new Promise((resolve) => {
+        if (window.snap && typeof window.snap.pay === 'function') {
+            return resolve(true);
+        }
+
+        let script = document.getElementById('midtrans-snap-script');
+        if (!script) {
+            script = document.createElement('script');
+            script.id = 'midtrans-snap-script';
+            script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
+            script.setAttribute('data-client-key', 'SB-Mid-client-6CGa60nWIQAPV2ct');
+            document.head.appendChild(script);
+        }
+
+        let checkInterval = setInterval(() => {
+            if (window.snap && typeof window.snap.pay === 'function') {
+                clearInterval(checkInterval);
+                resolve(true);
+            }
+        }, 100);
+
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            resolve(Boolean(window.snap && typeof window.snap.pay === 'function'));
+        }, 3000);
+    });
+};
+
 const PaymentTimer = ({ createdAt }) => {
     const [timeLeft, setTimeLeft] = useState('');
     const [isUrgent, setIsUrgent] = useState(false);
@@ -243,8 +272,9 @@ const CustomerDashboard = () => {
                             {order.paymentStatus === 'pending' && order.status !== 'dibatalkan' && (new Date().getTime() - new Date(order.createdAt).getTime() < 15 * 60 * 1000) && (
                                 <div className="px-6 pb-4 flex justify-end">
                                     <button 
-                                        onClick={() => {
-                                            if (window.snap && typeof window.snap.pay === 'function') {
+                                        onClick={async () => {
+                                            const isSnapLoaded = await loadSnapScript();
+                                            if (isSnapLoaded && window.snap) {
                                                 window.snap.pay(order.midtransToken, {
                                                     onSuccess: () => {
                                                         toast.success('Pembayaran Berhasil!');
