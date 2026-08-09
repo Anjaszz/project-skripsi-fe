@@ -220,29 +220,29 @@ const LandingPage = () => {
     return (
         <div className="min-h-screen bg-white font-sans text-slate-950">
             {/* Header Modern Clean */}
-            <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-md py-3 shadow-sm' : 'bg-transparent py-5'}`}>
-                <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-                    <Link to="/" className="flex items-center gap-3 group" aria-label="Pd. Amanah Lintang Home">
-                        <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white rotate-3 group-hover:rotate-0 transition-transform">
-                            <FaTint size={22} />
+            <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-md py-3 shadow-sm' : 'bg-transparent py-4 xl:py-5'}`}>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-between items-center gap-4">
+                    <Link to="/" className="flex items-center gap-3 group shrink-0" aria-label="Pd. Amanah Lintang Home">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white rotate-3 group-hover:rotate-0 transition-transform">
+                            <FaTint size={20} />
                         </div>
                         <div className="flex flex-col -space-y-1">
-                             <span className="text-xl font-black italic tracking-tighter">Pd. Amanah Lintang</span>
-                             <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest leading-none">Distributor Hub</span>
+                             <span className="text-lg lg:text-xl font-black italic tracking-tighter whitespace-nowrap">Pd. Amanah Lintang</span>
+                             <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider leading-none whitespace-nowrap">Distributor Air Mineral</span>
                         </div>
                     </Link>
 
-                    <nav className="hidden lg:flex items-center gap-12 text-[13px] font-black uppercase tracking-widest text-slate-600">
-                        <a href="#produk" className="hover:text-slate-900 transition-colors italic">Daftar Produk</a>
-                        <a href="#about" className="hover:text-slate-900 transition-colors italic">Tentang Kami</a>
-                        <a href="#vision" className="hover:text-slate-900 transition-colors italic">Visi & Misi</a>
-                        <a href="#contact" className="hover:text-slate-900 transition-colors italic">Kontak Logistik</a>
+                    <nav className="hidden lg:flex items-center gap-4 xl:gap-8 text-[12px] xl:text-[13px] font-black uppercase tracking-wider text-slate-600 shrink-0">
+                        <a href="#produk" className="hover:text-slate-900 transition-colors italic whitespace-nowrap">Daftar Produk</a>
+                        <a href="#about" className="hover:text-slate-900 transition-colors italic whitespace-nowrap">Tentang Kami</a>
+                        <a href="#vision" className="hover:text-slate-900 transition-colors italic whitespace-nowrap">Visi & Misi</a>
+                        <a href="#contact" className="hover:text-slate-900 transition-colors italic whitespace-nowrap">Kontak Logistik</a>
                     </nav>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                         <button 
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="lg:hidden p-3 bg-slate-900 text-white rounded-xl"
+                            className="lg:hidden p-2.5 bg-slate-900 text-white rounded-xl"
                             aria-label="Toggle Mobile Menu"
                         >
                             <FaBars size={18} />
@@ -251,22 +251,22 @@ const LandingPage = () => {
                         {!user && (
                             <button 
                                 onClick={() => setIsHistoryOpen(true)}
-                                className="hidden md:flex px-6 py-3 bg-white text-slate-800 border-2 border-slate-100 rounded-full font-black text-[10px] uppercase tracking-widest hover:border-blue-600 hover:text-blue-600 transition-all items-center gap-2"
+                                className="hidden xl:flex px-4 xl:px-5 py-2.5 bg-white text-slate-800 border-2 border-slate-100 rounded-full font-black text-[10px] uppercase tracking-wider hover:border-blue-600 hover:text-blue-600 transition-all items-center gap-2 whitespace-nowrap"
                             >
                                  Riwayat Pesanan
                             </button>
                         )}
                         
                         {user ? (
-                           <Link to={user.role === 'customer' ? '/customer-dashboard' : (user.role === 'admin' ? '/dashboard' : '/kasir')} className="hidden sm:flex px-6 py-3 bg-slate-900 text-white rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center gap-2">
+                           <Link to={user.role === 'customer' ? '/customer-dashboard' : (user.role === 'admin' ? '/dashboard' : '/kasir')} className="hidden sm:flex px-4 xl:px-6 py-2.5 xl:py-3 bg-slate-900 text-white rounded-full font-black text-[10px] uppercase tracking-wider hover:bg-blue-600 transition-all flex items-center gap-2 whitespace-nowrap">
                                Dashboard <FaChevronRight size={10} />
                            </Link>
                         ) : (
-                           <Link to="/auth" className="hidden sm:flex px-6 py-3 bg-slate-900 text-white rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center gap-2">
+                           <Link to="/auth" className="hidden sm:flex px-4 xl:px-6 py-2.5 xl:py-3 bg-slate-900 text-white rounded-full font-black text-[10px] uppercase tracking-wider hover:bg-blue-600 transition-all flex items-center gap-2 whitespace-nowrap">
                                Masuk / Daftar <FaArrowRight size={10} />
                            </Link>
                         )}
-                        <button onClick={() => setIsCartOpen(true)} className="relative p-3 bg-white border border-slate-100 rounded-xl text-slate-800 hover:bg-slate-50 transition-all" aria-label="Open Shopping Cart">
+                        <button onClick={() => setIsCartOpen(true)} className="relative p-2.5 sm:p-3 bg-white border border-slate-100 rounded-xl text-slate-800 hover:bg-slate-50 transition-all" aria-label="Open Shopping Cart">
                             <FaShoppingCart size={18} />
                             {cart.length > 0 && (
                                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white ring-px ring-red-200 animate-bounce">{cart.length}</span>
@@ -322,7 +322,7 @@ const LandingPage = () => {
                                 {[1,2,3,4].map(i => (
                                     <img key={i} src={`https://i.pravatar.cc/100?u=${i}`} className="w-10 h-10 rounded-full border-4 border-white" alt={`Partner Reseller ${i}`} loading="lazy" width="40" height="40" />
                                 ))}
-                                <span className="pl-6 text-[10px] font-bold text-slate-600 uppercase tracking-widest">DIPERCAYA 500+ RESELLER</span>
+                                <span className="pl-6 text-[10px] font-bold text-slate-600 uppercase tracking-widest">DIPERCAYA 50+ RESELLER</span>
                             </div>
                         </div>
                     </div>
@@ -477,12 +477,12 @@ const LandingPage = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-8 pt-4">
                                 <div className="space-y-1">
-                                    <p className="text-3xl font-black text-slate-900 italic">2015</p>
+                                    <p className="text-3xl font-black text-slate-900 italic">2020</p>
                                     <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Berdiri Sejak</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-3xl font-black text-slate-900 italic">10k+</p>
-                                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Galon/Hari</p>
+                                    <p className="text-3xl font-black text-slate-900 italic">500+</p>
+                                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">dus/Hari</p>
                                 </div>
                             </div>
                         </div>
@@ -567,7 +567,7 @@ agen dan toko."
                             <span className="text-2xl font-black text-white italic tracking-tighter">Pd. Amanah Lintang</span>
                         </div>
                         <p className="text-slate-200 text-lg font-medium leading-relaxed max-w-sm italic">
-                            Mitra terpercaya distribusi air mineral kemasan sejak 2015. Komitmen pada kualitas stok dan ketepatan waktu pengiriman.
+                            Mitra terpercaya distribusi air mineral kemasan sejak 2020. Komitmen pada kualitas stok dan ketepatan waktu pengiriman.
                         </p>
                         <div className="flex gap-6">
                             {[
@@ -584,11 +584,24 @@ agen dan toko."
                     
                     <div className="space-y-8">
                         <h4 className="text-white font-black uppercase tracking-widest text-xs italic">Akses Cepat</h4>
-                        <ul className="space-y-4 text-slate-300 text-sm font-bold">
-                            <li><a href="#" className="hover:text-blue-400 transition-colors">Daftar Menjadi Reseller</a></li>
-                            <li><a href="#" className="hover:text-blue-400 transition-colors">Cara Pemesanan Grosir</a></li>
-                            <li><a href="#" className="hover:text-blue-400 transition-colors">Cek Status Pesanan</a></li>
-                            <li><a href="#" className="hover:text-blue-400 transition-colors">Bantuan Support</a></li>
+                        <ul className="space-y-4 text-slate-300 text-sm font-bold flex flex-col items-start">
+                            <li>
+                                <a href="#produk" className="hover:text-blue-400 transition-colors">Katalog Produk Grosir</a>
+                            </li>
+                            <li>
+                                <button onClick={() => setIsSearchModalOpen(true)} className="hover:text-blue-400 transition-colors text-left">Lacak Status Pesanan</button>
+                            </li>
+                            <li>
+                                <button onClick={() => setIsHistoryOpen(true)} className="hover:text-blue-400 transition-colors text-left">Riwayat Pesanan Saya</button>
+                            </li>
+                            <li>
+                                <Link to={user ? (user.role === 'customer' ? '/customer-dashboard' : '/dashboard') : '/auth'} className="hover:text-blue-400 transition-colors">
+                                    {user ? "Dashboard Akun" : "Portal Akun & Register"}
+                                </Link>
+                            </li>
+                            <li>
+                                <a href="https://wa.me/6281320402004" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">Bantuan Support WhatsApp</a>
+                            </li>
                         </ul>
                     </div>
 

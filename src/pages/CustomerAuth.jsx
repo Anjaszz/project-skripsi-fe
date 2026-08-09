@@ -98,7 +98,7 @@ const CustomerAuth = () => {
                     </div>
 
                     <div className="relative z-10 pt-8 border-t border-white/10">
-                        <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/40">Terpercaya Sejak 2015</p>
+                        <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/40">Terpercaya Sejak 2020</p>
                     </div>
                 </div>
 
@@ -265,8 +265,8 @@ const CustomerAuth = () => {
                 </div>
             </div>
             
-            <p className="absolute bottom-8 left-1/2 -translate-x-1/2 text-[9px] font-black text-slate-300 uppercase tracking-[0.5em] italic hidden md:block">
-                © 2024 Pd. Amanah Lintang Distribution Hub
+            <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-black text-slate-300 uppercase tracking-[0.5em] italic hidden md:block">
+                © {new Date().getFullYear()} Pd. Amanah Lintang Distribution Hub
             </p>
         </div>
     );
