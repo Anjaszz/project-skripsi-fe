@@ -7,6 +7,16 @@ import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import Pagination from '../components/Pagination';
 
+const formatInputNumber = (val) => {
+  if (val === undefined || val === null || val === '') return '';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+const parseInputNumber = (val) => {
+  if (!val) return '';
+  return val.toString().replace(/\./g, '').replace(/\D/g, '');
+};
+
 const Inventory = () => {
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
@@ -292,14 +302,18 @@ const Inventory = () => {
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Harga Beli</label>
-                        <input
-                          type="number"
-                          value={formData.purchasePrice}
-                          onChange={(e) => setFormData({...formData, purchasePrice: e.target.value})}
-                          className="w-full border rounded-lg px-4 py-2"
-                          required
-                          min="0"
-                        />
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">Rp</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={formatInputNumber(formData.purchasePrice)}
+                            onChange={(e) => setFormData({...formData, purchasePrice: parseInputNumber(e.target.value)})}
+                            className="w-full border rounded-lg pl-9 pr-4 py-2 text-gray-800 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            placeholder="0"
+                            required
+                          />
+                        </div>
                     </div>
                   </div>
                   <div className="bg-blue-50 p-3 rounded-lg flex justify-between items-center text-sm">
