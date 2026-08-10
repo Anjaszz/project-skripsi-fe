@@ -50,6 +50,15 @@ const Produk = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const BASE_URL = API_URL.replace('/api', '');
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+      return imagePath;
+    }
+    const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+    return `${BASE_URL}/${cleanPath}`;
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -152,7 +161,7 @@ const Produk = () => {
       inventory: item.inventory?._id || '',
       wholesalePrices: item.wholesalePrices || []
     });
-    setImagePreview(item.image ? `${BASE_URL}/${item.image}` : null);
+    setImagePreview(getImageUrl(item.image));
     setShowModal(true);
   };
 
@@ -263,7 +272,7 @@ const Produk = () => {
               <div className="relative h-48 bg-gray-100 overflow-hidden">
                 {item.image ? (
                   <img
-                    src={`${BASE_URL}/${item.image}`}
+                    src={getImageUrl(item.image)}
                     alt={item.name}
                     className="w-full h-full object-cover"
                   />
