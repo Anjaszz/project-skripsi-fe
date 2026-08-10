@@ -33,7 +33,7 @@ function App() {
             <Route path="/auth" element={<CustomerAuth />} />
             <Route path="/customer-dashboard" element={<PrivateRoute requiredRole={['customer', 'admin', 'developer']}><CustomerDashboard /></PrivateRoute>} />
 
-            {/* Private Routes Group */}
+            {/* Private Routes Groupp */}
             <Route
               element={
                 <PrivateRoute requiredRole={staffRoles}>
