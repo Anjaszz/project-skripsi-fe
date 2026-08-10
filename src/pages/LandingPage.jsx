@@ -8,6 +8,16 @@ import heroImage from '../assets/hero-image.webp';
 import logo from '../assets/logo.jpg';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE_URL = API_URL.replace('/api', '');
+
+const getImageUrl = (imagePath, defaultName = '') => {
+  if (!imagePath) return `https://via.placeholder.com/400x500?text=${encodeURIComponent(defaultName || 'Produk')}`;
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:')) {
+    return imagePath;
+  }
+  const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+  return `${BASE_URL}/${cleanPath}`;
+};
 
 const loadSnapScript = () => {
     return new Promise((resolve) => {
@@ -486,7 +496,7 @@ const LandingPage = () => {
                         <div key={item._id} className="bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden group hover:border-blue-200 transition-all flex flex-col">
                             <div className="relative aspect-[4/5] overflow-hidden bg-slate-50">
                                 <img 
-                                    src={item.image ? (item.image.startsWith('http') ? item.image : `${API_URL.replace('/api', '')}/${item.image}`) : `https://via.placeholder.com/400x500?text=${item.name}`} 
+                                    src={getImageUrl(item.image, item.name)} 
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                                     alt={item.name} 
                                     loading="lazy"
@@ -753,7 +763,7 @@ agen dan toko."
                                         <div key={item.product._id + (item.variantName || '')} className="flex items-center gap-6 group scale-102 transition-transform">
                                             <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border border-slate-50">
                                                 <img 
-                                                    src={item.product.image ? (item.product.image.startsWith('http') ? item.product.image : `${API_URL.replace('/api', '')}/${item.product.image}`) : `https://via.placeholder.com/100?text=${item.product.name}`} 
+                                                    src={getImageUrl(item.product.image, item.product.name)} 
                                                     className="w-full h-full object-cover" 
                                                     alt={item.product.name}
                                                     loading="lazy"
