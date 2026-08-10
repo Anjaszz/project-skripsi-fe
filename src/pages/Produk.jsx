@@ -83,7 +83,7 @@ const Produk = () => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files && e.target.files[0];
     if (file) {
       setImageFile(file);
       const reader = new FileReader();
@@ -92,6 +92,7 @@ const Produk = () => {
       };
       reader.readAsDataURL(file);
     }
+    e.target.value = '';
   };
 
   const handleInventoryChange = (e) => {
@@ -375,7 +376,10 @@ const Produk = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {/* Image Upload Area */}
               <div className="flex flex-col items-center">
-                <label className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden relative">
+                <div
+                  onClick={() => document.getElementById('product-image-input')?.click()}
+                  className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden relative"
+                >
                   {imagePreview ? (
                     <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
@@ -384,8 +388,14 @@ const Produk = () => {
                       <span className="text-sm">Klik untuk upload gambar</span>
                     </div>
                   )}
-                  <input type="file" onChange={handleImageChange} className="hidden" accept="image/*" />
-                </label>
+                  <input
+                    id="product-image-input"
+                    type="file"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    accept="image/*"
+                  />
+                </div>
               </div>
 
               {/* Inventory Dropdown */}
