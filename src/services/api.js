@@ -76,8 +76,8 @@ export const inventoryAPI = {
 export const menuAPI = {
   getAll: (params) => api.get('/menu', { params }),
   getById: (id) => api.get(`/menu/${id}`),
-  create: (data) => api.post('/menu', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update: (id, data) => api.put(`/menu/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (data) => api.post('/menu', data),
+  update: (id, data) => api.put(`/menu/${id}`, data),
   delete: (id) => api.delete(`/menu/${id}`),
 };
 
