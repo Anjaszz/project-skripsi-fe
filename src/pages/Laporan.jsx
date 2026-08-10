@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { dashboardAPI, exportAPI, inventoryAPI, variantAPI } from '../services/api';
-import { FaFileExcel, FaFilePdf, FaCalendar, FaEye, FaTimes, FaHistory, FaSearch, FaFilter } from 'react-icons/fa';
+import { FaFileExcel, FaFilePdf, FaCalendar, FaEye, FaTimes, FaHistory, FaSearch, FaFilter, FaPrint, FaDownload } from 'react-icons/fa';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { printThermalReceipt, downloadReceiptPDF } from '../utils/receiptGenerator';
 
 import Pagination from '../components/Pagination';
 
@@ -548,10 +549,22 @@ const Laporan = () => {
                     </div>
                 </div>
 
-                <div className="p-4 bg-gray-50 border-t">
+                <div className="p-4 bg-gray-50 border-t flex gap-2">
+                    <button 
+                        onClick={() => printThermalReceipt(selectedTrx)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold text-xs shadow transition-colors flex items-center justify-center gap-2"
+                    >
+                        <FaPrint size={14} /> Cetak Struk POS
+                    </button>
+                    <button 
+                        onClick={() => downloadReceiptPDF(selectedTrx)}
+                        className="flex-1 bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-lg font-bold text-xs shadow transition-colors flex items-center justify-center gap-2"
+                    >
+                        <FaDownload size={14} /> PDF Struk
+                    </button>
                     <button 
                         onClick={() => setShowDetail(false)}
-                        className="w-full bg-gray-800 text-white py-2.5 rounded-lg font-bold hover:bg-gray-900 transition-colors"
+                        className="px-4 bg-white border border-gray-300 text-gray-700 py-2.5 rounded-lg font-bold text-xs hover:bg-gray-100 transition-colors"
                     >
                         Tutup
                     </button>
