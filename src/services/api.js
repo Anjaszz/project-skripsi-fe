@@ -4,12 +4,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
-// Add token & handle FormData headers
+// Add token to requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -18,15 +15,6 @@ api.interceptors.request.use(
         config.headers.set('Authorization', `Bearer ${token}`);
       } else {
         config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    if (config.data instanceof FormData) {
-      if (typeof config.headers.delete === 'function') {
-        config.headers.delete('Content-Type');
-        config.headers.delete('content-type');
-      } else {
-        delete config.headers['Content-Type'];
-        delete config.headers['content-type'];
       }
     }
     return config;
